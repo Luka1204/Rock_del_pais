@@ -20,11 +20,15 @@ from store import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path('admin/login/', views.admin_login, name='admin_login_otp'),
     path('admin/', admin.site.urls),
     path('management/categories/', views.management_category_list, name='management_category_list'),
     path('management/categories/create/', views.category_create, name='category_create'),
     path('management/categories/edit/<int:pk>/', views.category_edit, name='category_edit'),
     path('management/categories/delete/<int:pk>/', views.category_delete, name='category_delete'),
     path('register/', views.register, name='register'),
-    path('logout/', views.logout_view, name='logout')
+    path('logout/', views.logout_view, name='logout'),
+    path('login/', views.login_view, name='login'),
+    path('verify-email-code/', views.verify_email_code, name='verify_email_code'),
+    path('verify-email-code/resend/', views.resend_email_code, name='resend_email_code'),
 ]

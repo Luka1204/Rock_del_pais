@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verificar acceso | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/auth.css' %}">{% endblock %}
+
+{% block content %}
+<section class="auth-page wrap">
+  <div class="auth-card">
+    <span class="auth-eyebrow">Seguridad de tu cuenta</span>
+    <h1>Verificá tu acceso</h1>
+    <p class="auth-intro">Ingresá el código de seis dígitos que enviamos a tu correo. Vence en 10 minutos.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Verificar código</button>
+    </form>
+    <form method="post" action="{% url 'resend_email_code' %}" class="auth-resend">
+      {% csrf_token %}
+      <button type="submit">Enviar otro código</button>
+    </form>
+    <p class="auth-switch"><a href="{% url 'login' %}">Volver a iniciar sesión</a></p>
+  </div>
+</section>
+{% endblock %}

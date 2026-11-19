@@ -1,12 +1,23 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm, AuthenticationForm
 from django.db.models import Q
 from django.forms import inlineformset_factory
 
 from .models import Category, Consultation, Order, OrderItem, Product
 
 User = get_user_model()
+
+
+class EmailOTPForm(forms.Form):
+    code = forms.RegexField(
+        regex=r"^[0-9]{6}$",
+        label="Código de verificación",
+        error_messages={"invalid": "Ingresá el código de 6 dígitos."},
+        widget=forms.TextInput(
+            attrs={"autocomplete": "one-time-code", "inputmode": "numeric", "maxlength": "6"}
+        ),
+    )
 
 
 class RegistrationForm(UserCreationForm):
