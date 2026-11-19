@@ -3,6 +3,14 @@ from django.db import models
 from django.utils.text import slugify
 
 
+class EmailOTPChallenge(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    sent_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+
 class Category(models.Model):
     name = models.CharField("nombre", max_length=80)
     slug = models.SlugField("identificador", max_length=20, unique=True, blank=True)

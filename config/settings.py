@@ -50,6 +50,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "store.middleware.VerifiedSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -117,5 +118,14 @@ LOGOUT_REDIRECT_URL = "home"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("SMTP_EMAIL_USER", "lukareyesmantulak@gmail.com")
+EMAIL_HOST_PASSWORD = os.getenv("SMTP_APP_PASSWORD", "fqcsiozeuylftbsj")
+DEFAULT_FROM_EMAIL = os.getenv("SMTP_DEFAULT_FROM_EMAIL", "rock_del_pais@info.com")
+EMAIL_TIMEOUT = 15
 
 GRAPHENE = {"SCHEMA": "store.schema.schema"}

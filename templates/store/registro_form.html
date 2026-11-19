@@ -1,12 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Registro{% endblock %}
+{% block title %}Crear cuenta | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/auth.css' %}">{% endblock %}
 
 {% block content %}
-    <h1>Registro</h1>
+<section class="auth-page wrap">
+  <div class="auth-card">
+    <span class="auth-eyebrow">Rock del País</span>
+    <h1>Crear cuenta</h1>
+    <p class="auth-intro">Sumate y llevá la música a todos lados.</p>
     <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Registrar</button>
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Crear cuenta</button>
     </form>
+    <p class="auth-switch">¿Ya tenés cuenta? <a href="{% url 'login' %}">Ingresá</a></p>
+  </div>
+</section>
 {% endblock %}
