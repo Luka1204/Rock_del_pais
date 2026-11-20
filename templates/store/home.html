@@ -1,11 +1,60 @@
-{% extends "base.html" %}
-{%load static %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Rock del País{% endblock %}
+{% block title %}Rock del País | Inicio{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'store/home.css' %}">
+{% endblock %}
 
 {% block content %}
-    <section class="home wrap">
-        
-    </section>
-    
+<div class="rdp-home-wrapper">
+  <section class="rdp-home-hero" aria-labelledby="home-title">
+    <div class="wrap rdp-home-grid">
+      <div>
+        <span class="rdp-kicker">Rock del País · Inicio</span>
+        <h1 id="home-title">Música para escuchar y tocar.</h1>
+        <p class="rdp-lead">
+          Un espacio dedicado a la cultura del rock argentino, los discos que marcaron época y el equipo que acompaña cada ensayo y escenario.
+        </p>
+        <div class="rdp-actions">
+          <a class="rdp-btn-primary" href="{% url 'home' %}#productos">Ir a productos</a>
+          <a class="rdp-btn-secondary" href="#identidad">Nuestra identidad</a>
+        </div>
+      </div>
+
+      <aside class="rdp-card" aria-label="Presentación">
+        <strong>Del otro lado del mostrador</strong>
+        <p>
+          Seleccionamos ediciones, instrumentos y equipamiento pensando en quienes escuchan cada detalle y viven la música todos los días.
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="rdp-highlights" id="identidad" aria-labelledby="identidad-title">
+    <div class="wrap">
+      <h2 id="identidad-title" class="rdp-sr-only">Identidad de Rock del País</h2>
+      <div class="rdp-highlights-grid">
+        <article class="rdp-highlight-item">
+          <span class="rdp-highlight-num">01</span>
+          <h2>Cultura y Memoria</h2>
+          <p>Celebramos los discos, sonidos y referentes que construyeron nuestra identidad musical.</p>
+        </article>
+
+        <article class="rdp-highlight-item">
+          <span class="rdp-highlight-num">02</span>
+          <h2>Sonido Real</h2>
+          <p>Equipos e instrumentos elegidos con criterio técnico para estudio, ensayo y vivo.</p>
+        </article>
+
+        <article class="rdp-highlight-item">
+          <span class="rdp-highlight-num">03</span>
+          <h2>Cercanía y Respaldo</h2>
+          <p>Atención directa, envíos cuidados a todo el país y acompañamiento en cada paso.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}
