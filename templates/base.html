@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'store/store.css' %}">
+    <link rel="stylesheet" href="{% static 'store/list.css' %}">
+
     {% block extra_head %}{% endblock %}
   </head>
   <body>
@@ -78,7 +80,8 @@
             <a href="{% url 'home' %}">Bandeja de consultas</a>
           {% endif %}
         </div>
-        <p class="copyright">© {% now "Y" %} Rock del País · Hecho para quienes escuchan hasta el último surco.</p>
+        <p class="copyright">© {% now "Y" %} Rock del País · Hecho para quienes escuchan hasta el último surco de.</p>
+        <p class="copyright">© {% now "Y" %} Rock del País · Hecho para quienes escuchan hasta el último surco de.</p>
       </div>
     </footer>
     <script src="{% static 'store/store.js' %}" defer></script>
