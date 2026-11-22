@@ -1,23 +1,22 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "store/management_base.html" %}
 
 {% block title %}Categorías | Rock del País{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'store/list.css' %}">{% endblock %}
 
-{% block content %}
-<section class="manage wrap">
+{% block management_content %}
+<section class="manage-section">
   <div class="manage-head">
     <h1>Categorías</h1>
-    <a class="btn btn-primary" href="{% url 'category_create' %}">Nueva categoría</a>
+    <a class="shop-button" href="{% url 'category_create' %}">Nueva categoría</a>
   </div>
 
   {% if categories %}
-    <table class="table">
+    <div class="manage-table-wrap"><table class="manage-table">
       <thead>
         <tr>
             <th>Nombre</th>
           <th>Identificador</th>
           <th>Estado</th>
+          <th>Productos</th>
           <th></th>
         </tr>
       </thead>
@@ -27,18 +26,15 @@
             <td><strong>{{ category.name }}</strong></td>
             <td>{{ category.slug|default:"—" }}</td>
             <td>{% if category.active %}Visible{% else %}Oculta{% endif %}</td>
+            <td>{{ category.product_count }}</td>
             <td class="actions">
               <a href="{% url 'category_edit' category.pk %}">Editar</a>
-              <form method="post" action="{% url 'category_delete' category.pk %}"
-                    onsubmit="return confirm('¿Eliminar {{ category.name|escapejs }}?')">
-                {% csrf_token %}
-                <button type="submit">Eliminar</button>
-              </form>
+              <a href="{% url 'category_delete' category.pk %}">Eliminar</a>
             </td>
           </tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   {% else %}
     <p>Todavía no hay categorías. Crea la primera con el botón de arriba.</p>
   {% endif %}

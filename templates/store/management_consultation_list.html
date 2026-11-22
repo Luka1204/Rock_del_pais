@@ -1,0 +1,18 @@
+{% extends "store/management_base.html" %}
+{% block title %}Consultas | Gestión{% endblock %}
+{% block management_content %}
+<section class="manage-section">
+  <div class="manage-head"><h2>Consultas</h2></div>
+  {% if consultations %}
+    <div class="manage-table-wrap"><table class="manage-table">
+      <thead><tr><th>Contacto</th><th>Asunto y mensaje</th><th>Estado</th><th>Fecha</th></tr></thead>
+      <tbody>{% for consultation in consultations %}<tr>
+        <td>{{ consultation.name }}<br><a href="mailto:{{ consultation.email }}">{{ consultation.email }}</a></td>
+        <td><strong>{{ consultation.subject }}</strong><br>{{ consultation.message|linebreaksbr }}</td>
+        <td>{% if consultation.answered %}Respondida{% else %}Pendiente{% endif %}</td>
+        <td>{{ consultation.created_at|date:"d/m/Y H:i" }}</td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  {% else %}<p>No hay consultas recibidas todavía.</p>{% endif %}
+</section>
+{% endblock %}

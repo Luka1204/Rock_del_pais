@@ -11,6 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'store/store.css' %}">
+  <link rel="stylesheet" href="{% static 'store/auth.css' %}">
+
   
   
   {% block extra_head %}{% endblock %}
@@ -32,7 +34,7 @@
         <a href="{% url 'home' %}">La historia</a>
         <a href="{% url 'home' %}">Contacto</a>
         {% if user.is_authenticated and user.is_staff or user.is_superuser %}
-          <a href="{% url 'producto_lista' %}" class="btn btn-primary">Gestionar Productos</a>
+          <a href="{% url 'management_home' %}">Gestión</a>
         {% endif %} 
       </nav>
       <div class="header-actions">
@@ -76,9 +78,8 @@
           <a href="{% url 'home' %}">Nuestra historia</a>
           <a href="{% url 'home' %}">Dejanos tu consulta</a>
           {% if user.is_staff %}
-            <a href="{% url 'home' %}">Panel de gestión</a>
-            <a href="{% url 'home' %}">Administración</a>
-            <a href="{% url 'home' %}">Bandeja de consultas</a>
+            <a href="{% url 'management_home' %}">Panel de gestión</a>
+            <a href="{% url 'management_consultation_list' %}">Bandeja de consultas</a>
           {% endif %}
         </div>
         <p class="copyright">© {% now "Y" %} Rock del País · Hecho para quienes escuchan hasta el último surco de.</p>

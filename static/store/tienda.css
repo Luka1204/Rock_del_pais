@@ -1,369 +1,92 @@
-/* ==========================================================================
-   1. VARIABLES Y BASE GENERAL
-   Define colores, sombras y estilos generales del cuerpo y contenedor.
-   ========================================================================== */
-:root {
-  --bg-page: #121214;
-  --bg-card: #1c1c21;
-  --bg-card-hover: #24242b;
-  --bg-input: #141418;
-  --border-color: #2e2e36;
-  --text-main: #f4f4f6;
-  --text-muted: #a1a1aa;
-  --accent: #f59e0b;        /* Ámbar / Dorado */
-  --accent-hover: #d97706;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --success: #10b981;
-  --radius: 10px;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);}
-.store-container {
-  max-width: 1100px;
-  margin: 2rem auto;
-  padding: 0 1.25rem;
+.shop, .manage-page { padding-block: 3.5rem 5rem; }
+.shop-heading { max-width: 700px; margin-bottom: 2rem; }
+.shop-heading h1, .manage-intro h1, .edit-card h1, .product-detail h1 {
+  margin: 0; font-family: var(--font-heading); font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.12; letter-spacing: -.04em;
 }
-
-/* ==========================================================================
-   2. BARRA DE NAVEGACIÓN SUPERIOR (CONTRASTE EN LA TIENDA)
-   Evita que los enlaces del header queden claros/ilegibles sobre fondo claro.
-   ========================================================================== */
-body .site-header .brand,
-body .site-header .brand span,
-body .site-header .main-nav a,
-body .site-header .header-actions a,
-body .site-header .header-actions button {
-  color: #171715 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+.shop-heading p, .manage-intro p, .edit-card > p { color: #625e56; }
+.shop-kicker, .catalog-category {
+  color: #a93621; font-size: .73rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
 }
-
-.site-header .brand:hover,
-.main-nav a:hover,
-.header-actions a:hover {
-  color: #d97706 !important;
-  opacity: 1 !important;
+.shop-filters {
+  display: grid; grid-template-columns: 2fr 1.1fr 1fr 1fr auto; gap: 1rem; align-items: end;
+  padding: 1.4rem; border: 1px solid var(--color-line); background: var(--color-surface);
 }
-
-/* Mantener el badge del carrito en blanco sobre su círculo rojo */
-.header-actions .cart-count,
-.header-actions [class*="badge"],
-.header-actions [class*="count"] {
-  color: #ffffff !important;
+.shop-field { min-width: 0; }
+.shop-field label { display: block; margin-bottom: .35rem; font-size: .8rem; font-weight: 700; }
+.shop-field input:not([type="checkbox"]), .shop-field textarea, .shop-field select {
+  width: 100%; min-height: 46px; padding: .7rem .8rem; border: 1px solid #c8c1b4;
+  border-radius: 4px; background: #fff; color: var(--color-ink); font: inherit;
 }
-
-/* ==========================================================================
-   3. ENCABEZADO DE LA TIENDA Y BOTONES
-   Título principal de la vista y variantes de botones (.btn-*).
-   ========================================================================== */
-.store-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+.shop-field textarea { resize: vertical; }
+.shop-field input:focus, .shop-field textarea:focus, .shop-field select:focus {
+  outline: 2px solid var(--color-accent); outline-offset: 1px;
 }
-
-.store-header h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  letter-spacing: 0.5px;
+.filter-actions, .edit-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.shop-button {
+  display: inline-flex; min-height: 46px; align-items: center; justify-content: center;
+  padding: .65rem 1.1rem; border: 1px solid var(--color-ink); border-radius: 4px;
+  background: var(--color-ink); color: #fff; font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
 }
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  border-radius: 7px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.shop-button:hover { border-color: var(--color-accent); background: var(--color-accent); color: #fff; }
+.shop-button-outline { background: transparent; color: var(--color-ink); }
+.results-heading, .manage-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 2.5rem 0 1.1rem; }
+.results-heading h2, .manage-head h1, .manage-head h2 { margin: 0; font-family: var(--font-heading); font-size: 1.45rem; }
+.results-heading span { color: var(--color-muted); font-size: .85rem; }
+.catalog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.catalog-card { display: flex; flex-direction: column; border: 1px solid var(--color-line); background: var(--color-surface); }
+.catalog-image, .detail-image { display: grid; place-items: center; overflow: hidden; background: #e8e1d5; color: #b6a999; }
+.catalog-image { aspect-ratio: 4 / 3; }
+.catalog-image span, .detail-image span { font-family: var(--font-display); font-size: 4rem; letter-spacing: .08em; }
+.catalog-image img, .detail-image img { width: 100%; height: 100%; object-fit: cover; }
+.catalog-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 1.3rem; }
+.catalog-body h3 { margin: .4rem 0; font-family: var(--font-heading); font-size: 1.15rem; line-height: 1.3; }
+.catalog-body h3 a:hover, .field-link:hover, .back-link:hover, .actions a:hover { color: var(--color-accent); }
+.catalog-brand, .catalog-description { color: #625e56; font-size: .88rem; }
+.catalog-brand { margin: 0; }
+.catalog-description { margin: .7rem 0 1.2rem; }
+.catalog-meta { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: .5rem; margin-top: auto; margin-bottom: 1rem; }
+.catalog-meta strong, .detail-price { font-size: 1.25rem; font-weight: 700; }
+.catalog-meta span, .catalog-status, .image-credit { color: #625e56; font-size: .8rem; }
+.catalog-status { margin-bottom: .75rem; color: #a93621; font-weight: 700; }
+.shop-empty { padding: 3rem 1rem; border: 1px dashed #c8c1b4; text-align: center; color: #625e56; }
+.back-link { display: inline-block; margin-bottom: 1.3rem; font-weight: 700; font-size: .85rem; }
+.edit-card { max-width: 850px; margin: 0 auto; padding: clamp(1.3rem, 4vw, 2.5rem); border: 1px solid var(--color-line); background: var(--color-surface); }
+.edit-card h2 { font-family: var(--font-heading); }
+.edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; margin-top: 1.7rem; }
+.field-wide { grid-column: 1 / -1; }
+.shop-checkbox { display: flex; align-items: center; gap: .6rem; }
+.shop-checkbox input { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.shop-checkbox label { margin: 0; }
+.shop-error { display: block; margin-top: .35rem; color: #a93621; font-size: .82rem; }
+.field-link { display: inline-block; margin-top: .5rem; text-decoration: underline; font-size: .8rem; }
+.edit-actions { margin-top: 1.8rem; }
+.product-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; padding: 2rem; background: var(--color-surface); border: 1px solid var(--color-line); }
+.detail-image { aspect-ratio: 1; }
+.detail-price { color: var(--color-accent-dark); }
+.manage-intro { margin-bottom: 1.7rem; }
+.manage-nav { display: flex; flex-wrap: wrap; gap: .4rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line); }
+.manage-nav a { padding: .55rem .85rem; border-radius: 4px; font-size: .88rem; font-weight: 700; }
+.manage-nav a:hover, .manage-nav a:focus-visible { background: var(--color-ink); color: #fff; }
+.manage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+.manage-cards a { display: flex; flex-direction: column; gap: .5rem; min-height: 145px; padding: 1.4rem; border: 1px solid var(--color-line); background: var(--color-surface); }
+.manage-cards a:hover { border-color: var(--color-accent); }
+.manage-cards strong { font-family: var(--font-heading); font-size: 1.15rem; }
+.manage-cards span { color: #625e56; font-size: .88rem; }
+.manage-table-wrap { overflow-x: auto; border: 1px solid var(--color-line); background: var(--color-surface); }
+.manage-table { width: 100%; border-collapse: collapse; text-align: left; }
+.manage-table th, .manage-table td { padding: .9rem 1rem; border-bottom: 1px solid var(--color-line); vertical-align: top; }
+.manage-table th { background: #eee9df; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+.manage-table td { font-size: .88rem; overflow-wrap: anywhere; }
+.manage-table tr:last-child td { border-bottom: 0; }
+.actions a { display: inline-block; margin-right: .8rem; font-weight: 700; text-decoration: underline; }
+@media (max-width: 900px) {
+  .shop-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-grid, .manage-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-.btn-primary {
-  background-color: var(--accent);
-  color: #111;
-}
-
-.btn-primary:hover {
-  background-color: var(--accent-hover);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  border-color: var(--border-color);
-  color: var(--text-main);
-}
-
-.btn-secondary:hover {
-  background-color: var(--bg-card-hover);
-  border-color: var(--text-muted);
-}
-
-.btn-danger {
-  background-color: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-}
-
-.btn-danger:hover {
-  background-color: var(--danger);
-  color: #fff;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.82rem;
-}
-
-/* ==========================================================================
-   4. TABLA DE PRODUCTOS (LISTADO DE LA TIENDA)
-   Contenedor, filas, precios, etiquetas de stock y botones de acción.
-   ========================================================================== */
-.table-wrapper {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow-x: auto;
-}
-
-.store-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.store-table thead {
-  background-color: #17171b;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.store-table th {
-  padding: 0.95rem 1.1rem;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-.store-table td {
-  padding: 0.95rem 1.1rem;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-}
-
-.store-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.store-table tbody tr:hover {
-  background-color: var(--bg-card-hover);
-}
-
-.product-link {
-  color: var(--text-main);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.product-link:hover {
-  color: var(--accent);
-}
-
-.price-tag {
-  font-weight: 700;
-  color: var(--accent);
-  font-size: 1.02rem;
-}
-
-.badge-stock {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background-color: rgba(16, 185, 129, 0.14);
-  color: #6ee7b7;
-}
-
-.badge-stock.out {
-  background-color: rgba(239, 68, 68, 0.14);
-  color: #fca5a5;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-}
-
-/* ==========================================================================
-   5. DETALLE DE PRODUCTO
-   Tarjeta para la vista individual de un producto.
-   ========================================================================== */
-.detail-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 2rem;
-  box-shadow: var(--shadow);
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.detail-card h1 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-.detail-meta {
-  display: flex;
-  gap: 1.25rem;
-  align-items: center;
-  margin-bottom: 1.25rem;
-}
-
-.detail-description {
-  color: var(--text-muted);
-  background-color: var(--bg-input);
-  padding: 1rem 1.2rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  margin-bottom: 1.5rem;
-}
-
-/* ==========================================================================
-   6. FORMULARIO DE EDICIÓN Y CREACIÓN (PANEL ADMIN)
-   Estilos de tarjeta, inputs, select, checkbox, errores y botones del form.
-   ========================================================================== */
-.admin-form-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 2rem;
-  box-shadow: var(--shadow);
-  max-width: 620px;
-  margin: 0 auto;
-}
-
-.admin-form-card h1 {
-  margin-top: 0;
-  margin-bottom: 0.35rem;
-  font-size: 1.5rem;
-}
-
-.admin-subtitle {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.2rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.88rem;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
-  color: var(--text-main);
-}
-
-.admin-form-card input[type="text"],
-.admin-form-card input[type="number"],
-.admin-form-card textarea,
-.admin-form-card select {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.65rem 0.85rem;
-  background-color: var(--bg-input);
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.admin-form-card input:focus,
-.admin-form-card textarea:focus,
-.admin-form-card select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
-}
-
-.admin-form-card textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
-.form-row-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 0.9rem;
-  background-color: var(--bg-input);
-  border: 1px solid var(--border-color);
-  border-radius: 7px;
-}
-
-.checkbox-group input[type="checkbox"] {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
-.checkbox-group label {
-  margin: 0;
-  cursor: pointer;
-}
-
-.form-errors {
-  color: #fca5a5;
-  font-size: 0.82rem;
-  margin-top: 0.35rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border-color);
-}
-
-/* ==========================================================================
-   7. ESTADO VACÍO Y RESPONSIVE (MÓVILES)
-   Mensaje cuando no hay productos y ajuste a una columna en pantallas chicas.
-   ========================================================================== */
-.empty-state {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  background-color: var(--bg-card);
-  border: 1px dashed var(--border-color);
-  border-radius: var(--radius);
-  color: var(--text-muted);
-}
-
 @media (max-width: 600px) {
-  .form-row-2 {
-    grid-template-columns: 1fr;
-  }
+  .shop, .manage-page { padding-block: 2rem 3rem; }
+  .shop-filters, .catalog-grid, .manage-cards, .edit-grid, .product-detail { grid-template-columns: 1fr; }
+  .field-wide { grid-column: auto; }
+  .product-detail { gap: 1.5rem; padding: 1rem; }
 }

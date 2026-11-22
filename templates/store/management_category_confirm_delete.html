@@ -1,0 +1,15 @@
+{% extends "store/management_base.html" %}
+{% block title %}Eliminar categoría | Gestión{% endblock %}
+{% block management_content %}
+<section class="edit-card">
+  <h2>Eliminar categoría</h2>
+  <p>¿Seguro que querés eliminar «{{ category.name }}»?</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="edit-actions">
+      <button class="shop-button" type="submit">Eliminar categoría</button>
+      <a class="shop-button shop-button-outline" href="{% url 'management_category_list' %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -113,42 +113,16 @@
                 {% if producto.stock > 0 %}{{ producto.stock }} disp.{% else %}Sin stock{% endif %}
               </span>
             </div>
-            <h3>{{ producto.nombre }}</h3>
-            <p class="product-desc">{{ producto.descripcion|truncatechars:95 }}</p>
+            <h3>{{ producto.name }}</h3>
+            <p class="product-desc">{{ producto.description|truncatechars:95 }}</p>
             <div class="product-card-footer">
-              <span class="product-price">${{ producto.precio }}</span>
-              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
+              <span class="product-price">${{ producto.price }}</span>
+              <a href="{% url 'producto_detalle' producto.pk %}" class="btn-card">Ver en tienda</a>
             </div>
           </article>
           {% endfor %}
         {% else %}
-          <article class="product-card">
-            <div class="product-card-top"><span class="stock-pill in-stock">8 disp.</span></div>
-            <h3>Artaud — Pescado Rabioso (Vinilo 180g)</h3>
-            <p class="product-desc">Clásico álbum de 1973 en vinilo de alto gramaje con sonido remasterizado.</p>
-            <div class="product-card-footer">
-              <span class="product-price">$48.500</span>
-              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <div class="product-card-top"><span class="stock-pill in-stock">4 disp.</span></div>
-            <h3>Guitarra Eléctrica Tipo Stratocaster Negra</h3>
-            <p class="product-desc">Cuerpo sólido, tres micrófonos single-coil y selector de 5 posiciones.</p>
-            <div class="product-card-footer">
-              <span class="product-price">$310.000</span>
-              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <div class="product-card-top"><span class="stock-pill in-stock">10 disp.</span></div>
-            <h3>Pedal Overdrive Clásico para Guitarra</h3>
-            <p class="product-desc">Saturación analógica cálida y dinámica para empujar tu amplificador.</p>
-            <div class="product-card-footer">
-              <span class="product-price">$74.000</span>
-              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
-            </div>
-          </article>
+          <p>No hay productos publicados todavía.</p>
         {% endif %}
       </div>
     </div>

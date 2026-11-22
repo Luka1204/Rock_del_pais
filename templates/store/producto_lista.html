@@ -1,64 +1,58 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block extra_head %}
-  <link rel="stylesheet" href="{% static 'store/tienda.css' %}">
-{% endblock %}
+{% block title %}Tienda | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
 
 {% block content %}
-<div class="store-container">
-  <div class="store-header">
-    <h1>Tienda</h1>
-    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
-      <a href="{% url 'producto_crear' %}" class="btn btn-primary">+ Nuevo producto</a>
-    {% endif %}
+<section class="shop wrap">
+  <div class="shop-heading">
+    <span class="shop-kicker">EL SONIDO QUE NOS UNE</span>
+    <h1>Explorá la tienda</h1>
+    <p>Discos, instrumentos y equipo para seguir haciendo historia.</p>
   </div>
 
+  <form class="shop-filters" method="get" role="search">
+    {% for field in filter_form %}
+      <div class="shop-field">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}<div class="shop-error" id="{{ field.auto_id }}_error">{{ field.errors }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="filter-actions">
+      <button class="shop-button" type="submit">Buscar</button>
+      <a class="shop-button shop-button-outline" href="{% url 'producto_lista' %}">Limpiar</a>
+    </div>
+  </form>
+
+  <div class="results-heading">
+    <h2>Catálogo</h2>
+    <span>{{ productos|length }} producto{{ productos|length|pluralize:",s" }}</span>
+  </div>
   {% if productos %}
-    <div class="table-wrapper">
-      <table class="store-table">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for producto in productos %}
-            <tr>
-              <td>
-                <a href="{% url 'producto_detalle' producto.pk %}" class="product-link">
-                  {{ producto.nombre }}
-                </a>
-              </td>
-              <td class="price-tag">${{ producto.precio }}</td>
-              <td>
-                {% if producto.stock > 0 %}
-                  <span class="badge-stock">{{ producto.stock }} disp.</span>
-                {% else %}
-                  <span class="badge-stock out">Sin stock</span>
-                {% endif %}
-              </td>
-              <td>
-                <div class="actions-cell">
-                  <a href="{% url 'producto_detalle' producto.pk %}" class="btn btn-secondary btn-sm">Ver</a>
-                  {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
-                    <a href="{% url 'producto_editar' producto.pk %}" class="btn btn-primary btn-sm">Editar</a>
-                    <a href="{% url 'producto_eliminar' producto.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="catalog-grid">
+      {% for producto in productos %}
+        <article class="catalog-card">
+          <a class="catalog-image" href="{% url 'producto_detalle' producto.pk %}" aria-label="Ver {{ producto.name }}">
+            {% if producto.image_url %}<img src="{{ producto.image_url }}" alt="" loading="lazy">{% else %}<span aria-hidden="true">RDP</span>{% endif %}
+          </a>
+          <div class="catalog-body">
+            <span class="catalog-category">{{ producto.category.name }}</span>
+            <h3><a href="{% url 'producto_detalle' producto.pk %}">{{ producto.name }}</a></h3>
+            {% if producto.brand %}<p class="catalog-brand">{{ producto.brand }}</p>{% endif %}
+            <p class="catalog-description">{{ producto.description|default:"Sin descripción"|truncatechars:100 }}</p>
+            <div class="catalog-meta">
+              <strong>${{ producto.price }}</strong>
+              <span>{% if producto.stock %}{{ producto.stock }} disponibles{% else %}Sin stock{% endif %}</span>
+            </div>
+            {% if not producto.active or not producto.category.active %}<span class="catalog-status">No visible en la tienda pública</span>{% endif %}
+            <a class="shop-button shop-button-outline" href="{% url 'producto_detalle' producto.pk %}">Ver producto</a>
+          </div>
+        </article>
+      {% endfor %}
     </div>
   {% else %}
-    <div class="empty-state">
-      <p>No hay productos cargados todavía.</p>
-    </div>
+    <div class="shop-empty">No encontramos productos. Probá cambiar los filtros.</div>
   {% endif %}
-</div>
+</section>
 {% endblock %}

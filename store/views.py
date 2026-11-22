@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import AuthenticationForm
 from django.db import transaction
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -30,22 +30,62 @@ from .forms import (
     ManagedProductForm,
     ManagedUserChangeForm,
     ManagedUserCreationForm,
+    ProductFilterForm,
     RegistrationForm,
 )
 from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
 from .otp import MAX_ATTEMPTS, code_digest, issue_code, valid_email
 
-from .forms import ProductoForm
-from .models import Producto
-
-
 from django.core.exceptions import PermissionDenied
 
 
+def admin_requerido(view_func):
+    @login_required
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            raise PermissionDenied("No tenés permisos de administrador.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 def home(request):
-    return render(request, "store/home.html")
+    products = Product.objects.filter(active=True, category__active=True).order_by("-created_at")[:3]
+    return render(request, "store/home.html", {"productos_destacados": products})
 
+@admin_requerido
+def management_home(request):
+    return render(request, "store/management_home.html")
+
+
+@admin_requerido
+def management_product_list(request):
+    return render(request, "store/management_product_list.html", {
+        "products": Product.objects.select_related("category"),
+    })
+
+
+@admin_requerido
+def management_order_list(request):
+    return render(request, "store/management_order_list.html", {
+        "orders": Order.objects.prefetch_related("items"),
+    })
+
+
+@admin_requerido
+def management_user_list(request):
+    return render(request, "store/management_user_list.html", {
+        "users": get_user_model().objects.order_by("username"),
+    })
+
+
+@admin_requerido
+def management_consultation_list(request):
+    return render(request, "store/management_consultation_list.html", {
+        "consultations": Consultation.objects.all(),
+    })
+
+
+@admin_requerido
 def management_category_list(request):
     categories = Category.objects.annotate(product_count=Count("products"))
     return render(
@@ -54,8 +94,9 @@ def management_category_list(request):
         {"categories": categories},
     )
 
+@admin_requerido
 def category_create(request):
-    form = ManagedCategoryForm(request.POST or None)
+    form = ManagedCategoryForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Creamos la categoría.")
@@ -67,9 +108,10 @@ def category_create(request):
     )
 
 
-def category_edit(request, category_id):
-    category = get_object_or_404(Category, pk=category_id)
-    form = ManagedCategoryForm(request.POST or None, instance=category)
+@admin_requerido
+def category_edit(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    form = ManagedCategoryForm(request.POST if request.method == "POST" else None, instance=category)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Guardamos los cambios de la categoría.")
@@ -81,8 +123,9 @@ def category_edit(request, category_id):
     )
 
 
-def category_delete(request, category_id):
-    category = get_object_or_404(Category, pk=category_id)
+@admin_requerido
+def category_delete(request, pk):
+    category = get_object_or_404(Category, pk=pk)
     if request.method == "POST":
         try:
             category.delete()
@@ -254,119 +297,75 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect("home")
-# Create your views here.
-
-
-
-
-def producto_lista(request):
-    productos = Producto.objects.all()
-    return render(request, "store/producto_lista.html", {"productos": productos})
-
-
-def producto_detalle(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
-    return render(request, "store/producto_detalle.html", {"producto": producto})
-
-
-@login_required
-def producto_crear(request):
-    if request.method == "POST":
-        form = ProductoForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("producto_lista")
-    else:
-        form = ProductoForm()
-    return render(
-        request,
-        "store/producto_form.html",
-        {"form": form, "titulo": "Crear producto"},
-    )
-
-
-@login_required
-def producto_editar(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
-    if request.method == "POST":
-        form = ProductoForm(request.POST, instance=producto)
-        if form.is_valid():
-            form.save()
-            return redirect("producto_lista")
-    else:
-        form = ProductoForm(instance=producto)
-    return render(
-        request,
-        "store/producto_form.html",
-        {"form": form, "titulo": "Editar producto"},
-    )
-
-
-@login_required
-def producto_eliminar(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
-    if request.method == "POST":
-        producto.delete()
-        return redirect("producto_lista")
-    return render(
-        request,
-        "store/producto_confirmar_eliminar.html",
-        {"producto": producto},
-    )
-
-
-
-def admin_requerido(view_func):
-    
-    @login_required
-    def _wrapped_view(request, *args, **kwargs):
-        if not (request.user.is_staff or request.user.is_superuser):
-            raise PermissionDenied("No tenés permisos de administrador.")
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view
-
+def _productos_visibles(request):
+    products = Product.objects.select_related("category")
+    if not (request.user.is_staff or request.user.is_superuser):
+        products = products.filter(active=True, category__active=True)
+    return products
 
 
 def producto_lista(request):
-    productos = Producto.objects.all()
-    return render(request, "store/producto_lista.html", {"productos": productos})
+    productos = _productos_visibles(request)
+    form = ProductFilterForm(request.GET, include_inactive=request.user.is_staff or request.user.is_superuser)
+    if form.is_valid():
+        query = form.cleaned_data["q"]
+        if query:
+            productos = productos.filter(
+                Q(name__icontains=query) | Q(brand__icontains=query) | Q(description__icontains=query)
+            )
+        if form.cleaned_data["category"]:
+            productos = productos.filter(category=form.cleaned_data["category"])
+        if form.cleaned_data["stock"] == "available":
+            productos = productos.filter(stock__gt=0)
+        elif form.cleaned_data["stock"] == "unavailable":
+            productos = productos.filter(stock=0)
+        ordering = {
+            "": ("name", "pk"),
+            "price_asc": ("price", "name", "pk"),
+            "price_desc": ("-price", "name", "pk"),
+            "recent": ("-created_at", "-pk"),
+        }
+        productos = productos.order_by(*ordering[form.cleaned_data["sort"]])
+    else:
+        productos = productos.none()
+    return render(request, "store/producto_lista.html", {"productos": productos, "filter_form": form})
 
 
 def producto_detalle(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
+    producto = get_object_or_404(_productos_visibles(request), pk=pk)
     return render(request, "store/producto_detalle.html", {"producto": producto})
 
 
 @admin_requerido
 def producto_crear(request):
     if request.method == "POST":
-        form = ProductoForm(request.POST, request.FILES)
+        form = ManagedProductForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, "Producto creado correctamente.")
             return redirect("producto_lista")
     else:
-        form = ProductoForm()
+        form = ManagedProductForm()
     return render(request, "store/producto_form.html", {"form": form, "accion": "Crear"})
 
 
 @admin_requerido
 def producto_editar(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
+    producto = get_object_or_404(Product, pk=pk)
     if request.method == "POST":
-        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        form = ManagedProductForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             form.save()
             messages.success(request, "Producto actualizado correctamente.")
             return redirect("producto_lista")
     else:
-        form = ProductoForm(instance=producto)
+        form = ManagedProductForm(instance=producto)
     return render(request, "store/producto_form.html", {"form": form, "accion": "Editar"})
 
 
 @admin_requerido
 def producto_eliminar(request, pk):
-    producto = get_object_or_404(Producto, pk=pk)
+    producto = get_object_or_404(Product, pk=pk)
     if request.method == "POST":
         producto.delete()
         messages.success(request, "Producto eliminado correctamente.")

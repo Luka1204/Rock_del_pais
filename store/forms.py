@@ -6,9 +6,6 @@ from django.forms import inlineformset_factory
 
 from .models import Category, Consultation, Order, OrderItem, Product
 
-from .models import Producto
-
-
 User = get_user_model()
 
 
@@ -100,6 +97,31 @@ class ManagedCategoryForm(forms.ModelForm):
             "active": "Categoría activa",
             "sort_order": "Orden de aparición",
         }
+
+
+class ProductFilterForm(forms.Form):
+    q = forms.CharField(label="Buscar", required=False, max_length=120)
+    category = forms.ModelChoiceField(
+        label="Categoría", queryset=Category.objects.none(), to_field_name="slug",
+        required=False, empty_label="Todas las categorías",
+    )
+    stock = forms.ChoiceField(
+        label="Disponibilidad", required=False,
+        choices=(("", "Todo el stock"), ("available", "Con stock"), ("unavailable", "Sin stock")),
+    )
+    sort = forms.ChoiceField(
+        label="Ordenar por", required=False,
+        choices=(("", "Nombre"), ("price_asc", "Menor precio"), ("price_desc", "Mayor precio"),
+                 ("recent", "Más recientes")),
+    )
+
+    def __init__(self, *args, include_inactive=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        categories = Category.objects.all()
+        if not include_inactive:
+            categories = categories.filter(active=True)
+        self.fields["category"].queryset = categories
+        self.fields["q"].widget.attrs.update({"placeholder": "Nombre, marca o descripción"})
 
 
 class ManagedProductForm(forms.ModelForm):
@@ -194,11 +216,3 @@ ManagedOrderItemFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True,
 )
-
-
-
-
-class ProductoForm(forms.ModelForm):
-    class Meta:
-        model = Producto
-        fields = ["nombre", "descripcion", "precio", "stock", "disponible"]

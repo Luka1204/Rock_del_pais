@@ -1,0 +1,17 @@
+{% extends "store/management_base.html" %}
+{% block title %}Pedidos | Gestión{% endblock %}
+{% block management_content %}
+<section class="manage-section">
+  <div class="manage-head"><h2>Pedidos</h2></div>
+  {% if orders %}
+    <div class="manage-table-wrap"><table class="manage-table">
+      <thead><tr><th>Pedido</th><th>Cliente</th><th>Artículos</th><th>Estado</th><th>Total</th><th>Fecha</th></tr></thead>
+      <tbody>{% for order in orders %}<tr>
+        <td>#{{ order.pk }}</td><td>{{ order.full_name }}<br>{{ order.email }}</td>
+        <td>{% for item in order.items.all %}{{ item.quantity }} × {{ item.product_name }}{% if not forloop.last %}<br>{% endif %}{% empty %}Sin artículos{% endfor %}</td>
+        <td>{{ order.get_status_display }}</td><td>${{ order.total }}</td><td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  {% else %}<p>No hay pedidos recibidos todavía.</p>{% endif %}
+</section>
+{% endblock %}

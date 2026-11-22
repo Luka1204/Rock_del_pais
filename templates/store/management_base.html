@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
+{% block content %}
+<div class="manage-page wrap">
+  <div class="manage-intro">
+    <span class="shop-kicker">ROCK DEL PAÍS</span>
+    <h1>Panel de gestión</h1>
+    <p>Administrá el catálogo y consultá la actividad de la tienda.</p>
+  </div>
+  <nav class="manage-nav" aria-label="Menú de gestión">
+    <a href="{% url 'management_product_list' %}">Productos</a>
+    <a href="{% url 'management_category_list' %}">Categorías</a>
+    <a href="{% url 'management_order_list' %}">Pedidos</a>
+    <a href="{% url 'management_user_list' %}">Usuarios</a>
+    <a href="{% url 'management_consultation_list' %}">Consultas</a>
+  </nav>
+  {% block management_content %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "store/management_base.html" %}
+{% block title %}Gestión | Rock del País{% endblock %}
+{% block management_content %}
+<div class="manage-cards">
+  <a href="{% url 'management_product_list' %}"><strong>Productos</strong><span>Administrá el catálogo y su disponibilidad.</span></a>
+  <a href="{% url 'management_category_list' %}"><strong>Categorías</strong><span>Organizá los productos de la tienda.</span></a>
+  <a href="{% url 'management_order_list' %}"><strong>Pedidos</strong><span>Consultá los pedidos recibidos.</span></a>
+  <a href="{% url 'management_user_list' %}"><strong>Usuarios</strong><span>Consultá las cuentas registradas.</span></a>
+  <a href="{% url 'management_consultation_list' %}"><strong>Consultas</strong><span>Revisá los mensajes recibidos.</span></a>
+</div>
+{% endblock %}

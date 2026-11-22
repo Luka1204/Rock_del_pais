@@ -44,7 +44,7 @@
   font-weight: 700;
 }
 
-.auth-card input {
+.auth-card input:not([type="hidden"]) {
   display: block;
   width: 100%;
   min-height: 48px;
@@ -56,17 +56,17 @@
   font: inherit;
 }
 
-.auth-card input:hover {
+.auth-card input:not([type="hidden"]):hover {
   border-color: #77736b;
 }
 
-.auth-card input:focus-visible {
+.auth-card input:not([type="hidden"]):focus-visible {
   border-color: var(--color-accent-dark);
   outline: 3px solid rgb(211 75 47 / 25%);
   outline-offset: 1px;
 }
 
-.auth-card input[aria-invalid="true"] {
+.auth-card input:not([type="hidden"])[aria-invalid="true"] {
   border-color: #b83227;
 }
 

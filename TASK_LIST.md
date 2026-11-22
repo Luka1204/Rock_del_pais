@@ -24,7 +24,7 @@ Backlog inicial basado en el estado actual del proyecto. Las tareas están agrup
 
 ### Front-end — Juan, Emmanuel y Mateo
 
-- [ ] **FE-01 — Alinear la tabla de categorías con el contrato**  
+- [X] **FE-01 — Alinear la tabla de categorías con el contrato**  
   Actualizar `management_category_list.html`: quitar `description` si no se incorpora al modelo y mostrar el campo `active` en vez de `is_active`.  
   **Aceptación:** el listado no muestra campos inexistentes y contempla estados vacío y con resultados.
 

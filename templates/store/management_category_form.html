@@ -1,13 +1,26 @@
-{% extends "base.html" %}
+{% extends "store/management_base.html" %}
 {% block title %}{{ title }} | Rock del País{% endblock %}
-{% block content %}
-<section class="wrap page-section narrow-page">
-  <div class="breadcrumbs"><a href="{% url 'management_category_list' %}">Gestión</a><span>/</span><a href="{% url 'management_category_list' %}">Categorías</a><span>/</span>{{ title }}</div>
-  <form class="form-card" method="post"><span class="eyebrow">Catálogo</span><h1>{{ title }}</h1>{% csrf_token %}
-    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-    {% for field in form %}<div class="field-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</div>{% endfor %}
-    <p class="form-note">Al pausar una categoría, sus productos dejan de aparecer en la tienda sin perder su asociación.</p>
-    <div class="form-actions"><button class="button button-dark" type="submit">Guardar categoría</button><a class="button button-outline" href="{% url 'management_category_list' %}">Cancelar</a></div>
+{% block management_content %}
+<section class="edit-card">
+  <span class="shop-kicker">CATÁLOGO</span>
+  <h2>{{ title }}</h2>
+  <p>Al pausar una categoría, sus productos dejan de aparecer en la tienda pública.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="shop-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="edit-grid">
+      {% for field in form %}
+        <div class="shop-field">
+          {% if field.name == "active" %}<div class="shop-checkbox">{{ field }} {{ field.label_tag }}</div>
+          {% else %}{{ field.label_tag }} {{ field }}{% endif %}
+          {% if field.errors %}<div class="shop-error" id="{{ field.auto_id }}_error">{{ field.errors }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="edit-actions">
+      <button class="shop-button" type="submit">Guardar categoría</button>
+      <a class="shop-button shop-button-outline" href="{% url 'management_category_list' %}">Cancelar</a>
+    </div>
   </form>
 </section>
 {% endblock %}

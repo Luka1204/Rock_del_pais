@@ -1,17 +1,27 @@
 {% extends "base.html" %}
-
+{% load static %}
+{% block title %}{{ producto.name }} | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
 {% block content %}
-  <h1>{{ producto.nombre }}</h1>
-  <p><strong>Precio:</strong> ${{ producto.precio }}</p>
-  <p><strong>Stock:</strong> {{ producto.stock }}</p>
-  <p><strong>Disponible:</strong> {% if producto.disponible %}Sí{% else %}No{% endif %}</p>
-  <p><strong>Descripción:</strong> {{ producto.descripcion|default:"Sin descripción" }}</p>
-
-  <p>
-    <a href="{% url 'producto_lista' %}">Volver al listado</a>
-    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
-      | <a href="{% url 'producto_editar' producto.pk %}">Editar</a>
-      | <a href="{% url 'producto_eliminar' producto.pk %}">Eliminar</a>
-    {% endif %}
-  </p>
+<section class="shop wrap">
+  <a class="back-link" href="{% url 'producto_lista' %}">← Volver a la tienda</a>
+  <article class="product-detail">
+    <div class="detail-image">
+      {% if producto.image_url %}<img src="{{ producto.image_url }}" alt="{{ producto.name }}">{% else %}<span aria-hidden="true">RDP</span>{% endif %}
+    </div>
+    <div>
+      <span class="shop-kicker">{{ producto.category.name }}</span>
+      <h1>{{ producto.name }}</h1>
+      {% if producto.brand %}<p>{{ producto.brand }}</p>{% endif %}
+      <p class="detail-price">${{ producto.price }}</p>
+      <p>{% if producto.stock %}{{ producto.stock }} disponibles{% else %}Sin stock{% endif %}</p>
+      <p>{{ producto.description|default:"Sin descripción"|linebreaksbr }}</p>
+      {% if producto.image_credit %}<p class="image-credit">Imagen: {% if producto.image_source_url %}<a href="{{ producto.image_source_url }}">{{ producto.image_credit }}</a>{% else %}{{ producto.image_credit }}{% endif %}</p>{% endif %}
+      {% if user.is_staff or user.is_superuser %}
+        {% if not producto.active or not producto.category.active %}<p class="catalog-status">No visible en la tienda pública</p>{% endif %}
+        <div class="edit-actions"><a class="shop-button" href="{% url 'producto_editar' producto.pk %}">Editar</a><a class="shop-button shop-button-outline" href="{% url 'producto_eliminar' producto.pk %}">Eliminar</a></div>
+      {% endif %}
+    </div>
+  </article>
+</section>
 {% endblock %}

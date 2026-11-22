@@ -1,0 +1,18 @@
+{% extends "store/management_base.html" %}
+{% block title %}Productos | Gestión{% endblock %}
+{% block management_content %}
+<section class="manage-section">
+  <div class="manage-head"><h2>Productos</h2><a class="shop-button" href="{% url 'producto_crear' %}">Nuevo producto</a></div>
+  {% if products %}
+    <div class="manage-table-wrap"><table class="manage-table">
+      <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>{% for product in products %}<tr>
+        <td><a href="{% url 'producto_detalle' product.pk %}">{{ product.name }}</a></td>
+        <td>{{ product.category.name }}</td><td>${{ product.price }}</td><td>{{ product.stock }}</td>
+        <td>{% if product.active and product.category.active %}Publicado{% elif not product.active %}No publicado{% else %}Categoría pausada{% endif %}</td>
+        <td class="actions"><a href="{% url 'producto_editar' product.pk %}">Editar</a><a href="{% url 'producto_eliminar' product.pk %}">Eliminar</a></td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+  {% else %}<p>No hay productos cargados todavía.</p>{% endif %}
+</section>
+{% endblock %}

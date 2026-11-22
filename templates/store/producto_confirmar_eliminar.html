@@ -1,12 +1,19 @@
 {% extends "base.html" %}
-
+{% load static %}
+{% block title %}Eliminar producto | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
 {% block content %}
-  <h1>Eliminar producto</h1>
-  <p>¿Seguro que querés eliminar "<strong>{{ producto.nombre }}</strong>"?</p>
-
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit">Sí, eliminar</button>
-    <a href="{% url 'producto_lista' %}">Cancelar</a>
-  </form>
+<section class="shop wrap">
+  <div class="edit-card">
+    <span class="shop-kicker">GESTIÓN DEL CATÁLOGO</span>
+    <h1>Eliminar producto</h1>
+    <p>¿Seguro que querés eliminar «{{ producto.name }}»?</p>
+    <form method="post">{% csrf_token %}
+      <div class="edit-actions">
+        <button class="shop-button" type="submit">Eliminar producto</button>
+        <a class="shop-button shop-button-outline" href="{% url 'management_product_list' %}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

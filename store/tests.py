@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import EmailOTPChallenge
+from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
 from .otp import MAX_ATTEMPTS
 
 
@@ -122,6 +122,12 @@ class EmailOTPTests(TestCase):
             self.client.post(reverse("verify_email_code"), {"code": self.sent_code()}), "/admin/"
         )
 
+    def test_login_form_preserves_safe_next(self):
+        response = self.client.get(reverse("login"), {"next": "/admin/"})
+        self.assertContains(response, 'name="next" value="/admin/"')
+        response = self.client.get(reverse("login"), {"next": "https://evil.example/"})
+        self.assertNotContains(response, 'name="next"')
+
     def test_old_authenticated_session_is_logged_out(self):
         self.client.force_login(self.user)
         self.client.get(reverse("home"))
@@ -162,3 +168,160 @@ class EmailOTPTests(TestCase):
         self.assertRedirects(
             self.client.post(reverse("verify_email_code"), {"code": self.sent_code()}), reverse("home")
         )
+
+
+@override_settings(ALLOWED_HOSTS=["testserver"])
+class ProductCatalogTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Discos")
+        self.product = Product.objects.create(
+            name="Disco", description="Edición original", category=self.category,
+            price="1250.00", stock=3,
+        )
+        self.staff = get_user_model().objects.create_user(
+            username="admin", password="clave-segura-123", is_staff=True
+        )
+
+    def login_staff(self):
+        self.client.force_login(self.staff)
+        session = self.client.session
+        session["otp_verified"] = True
+        session.save()
+
+    def test_public_catalog_and_home_show_published_products_only(self):
+        inactive = Product.objects.create(
+            name="Oculto", description="Oculto", category=self.category,
+            price="10.00", active=False,
+        )
+        inactive_category = Category.objects.create(name="Pausada", active=False)
+        hidden_by_category = Product.objects.create(
+            name="Categoría pausada", description="Oculto", category=inactive_category,
+            price="10.00",
+        )
+        for url in ("home", "producto_lista"):
+            response = self.client.get(reverse(url))
+            self.assertContains(response, "Disco")
+            self.assertNotContains(response, "Oculto")
+            self.assertNotContains(response, "Categoría pausada")
+        self.assertContains(self.client.get(reverse("producto_detalle", args=[self.product.pk])), "Edición original")
+        for product in (inactive, hidden_by_category):
+            self.assertEqual(self.client.get(reverse("producto_detalle", args=[product.pk])).status_code, 404)
+
+    def test_staff_creates_edits_and_deletes_product(self):
+        self.login_staff()
+        data = {
+            "name": "Guitarra", "brand": "Marca", "description": "Eléctrica",
+            "category": self.category.pk, "price": "12000.00", "stock": 2,
+            "image_url": "https://example.com/guitarra.jpg", "active": "on",
+        }
+        response = self.client.post(reverse("producto_crear"), data)
+        self.assertRedirects(response, reverse("producto_lista"))
+        product = Product.objects.get(name="Guitarra")
+        self.assertEqual(product.brand, "Marca")
+        self.assertContains(self.client.get(reverse("producto_detalle", args=[product.pk])), "guitarra.jpg")
+        data["name"] = "Guitarra editada"
+        data["description"] = ""
+        data.pop("active")
+        response = self.client.post(reverse("producto_editar", args=[product.pk]), data)
+        self.assertRedirects(response, reverse("producto_lista"))
+        product.refresh_from_db()
+        self.assertEqual(product.name, "Guitarra editada")
+        self.assertEqual(product.description, "")
+        self.assertFalse(product.active)
+        self.assertContains(self.client.get(reverse("producto_lista")), "Guitarra editada")
+        self.assertRedirects(
+            self.client.post(reverse("producto_eliminar", args=[product.pk])), reverse("producto_lista")
+        )
+        self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+    def test_form_displays_errors_and_non_staff_cannot_modify(self):
+        self.login_staff()
+        response = self.client.post(reverse("producto_crear"), {"name": "Sin categoría"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Este campo es obligatorio")
+        self.assertFalse(Product.objects.filter(name="Sin categoría").exists())
+        self.staff.is_staff = False
+        self.staff.save()
+        self.assertEqual(self.client.post(reverse("producto_eliminar", args=[self.product.pk])).status_code, 403)
+        self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
+
+    def test_catalog_combines_search_category_stock_and_ordering(self):
+        other_category = Category.objects.create(name="Instrumentos")
+        Product.objects.create(
+            name="Guitarra", brand="Disco", description="Instrumento", category=other_category,
+            price="500.00", stock=5,
+        )
+        Product.objects.create(
+            name="Vinilo", brand="Disco", description="Colección", category=self.category,
+            price="300.00", stock=0,
+        )
+        second = Product.objects.create(
+            name="Otro disco", description="Edición original", category=self.category,
+            price="2000.00", stock=2,
+        )
+        response = self.client.get(reverse("producto_lista"), {
+            "q": "edición", "category": self.category.slug, "stock": "available", "sort": "price_desc",
+        })
+        self.assertEqual(list(response.context["productos"]), [second, self.product])
+        response = self.client.get(reverse("producto_lista"), {"q": "disco", "stock": "unavailable"})
+        self.assertEqual([p.name for p in response.context["productos"]], ["Vinilo"])
+        response = self.client.get(reverse("producto_lista"), {"category": "inexistente"})
+        self.assertFalse(response.context["filter_form"].is_valid())
+        self.assertContains(response, response.context["filter_form"].errors["category"][0])
+        self.assertEqual(list(response.context["productos"]), [])
+
+    def test_management_requires_administrator_for_every_route(self):
+        routes = [
+            ("management_home", []), ("management_product_list", []),
+            ("management_category_list", []), ("category_create", []),
+            ("category_edit", [self.category.pk]), ("category_delete", [self.category.pk]),
+            ("management_order_list", []), ("management_user_list", []),
+            ("management_consultation_list", []),
+        ]
+        for name, args in routes:
+            self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 302)
+        self.login_staff()
+        self.staff.is_staff = False
+        self.staff.save()
+        for name, args in routes:
+            self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 403)
+            self.assertEqual(self.client.post(reverse(name, args=args)).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("home")), "Panel de gestión")
+
+    def test_management_shows_real_data_and_category_actions_work(self):
+        order = Order.objects.create(
+            full_name="Cliente prueba", email="cliente@example.com", phone="123",
+            address="Retiro", payment_method=Order.PaymentMethod.CASH, total="1250.00",
+        )
+        OrderItem.objects.create(
+            order=order, product=self.product, product_name=self.product.name,
+            unit_price=self.product.price, quantity=1,
+        )
+        Consultation.objects.create(
+            name="Visitante", email="visitante@example.com", subject="Consulta especial", message="Hola"
+        )
+        self.login_staff()
+        for name, text in (
+            ("management_home", "Productos"), ("management_product_list", "Disco"),
+            ("management_category_list", "Discos"), ("management_order_list", "Cliente prueba"),
+            ("management_user_list", "admin"), ("management_consultation_list", "Consulta especial"),
+        ):
+            self.assertContains(self.client.get(reverse(name)), text)
+        self.assertContains(self.client.post(reverse("category_create"), {}), "Este campo es obligatorio")
+        response = self.client.post(reverse("category_create"), {
+            "name": "Accesorios", "active": "on", "sort_order": 0,
+        })
+        self.assertRedirects(response, reverse("management_category_list"))
+        self.assertTrue(Category.objects.filter(name="Accesorios").exists())
+        response = self.client.get(reverse("category_edit", args=[self.category.pk]))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(reverse("category_edit", args=[self.category.pk]), {
+            "name": "Discos editados", "slug": self.category.slug, "active": "on", "sort_order": 0,
+        })
+        self.assertRedirects(response, reverse("management_category_list"))
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.name, "Discos editados")
+        self.assertEqual(self.client.get(reverse("category_delete", args=[self.category.pk])).status_code, 200)
+        response = self.client.post(reverse("category_delete", args=[self.category.pk]), follow=True)
+        self.assertContains(response, "No se puede eliminar una categoría con productos")
+        self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
