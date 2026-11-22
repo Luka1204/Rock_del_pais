@@ -6,6 +6,9 @@ from django.forms import inlineformset_factory
 
 from .models import Category, Consultation, Order, OrderItem, Product
 
+from .models import Producto
+
+
 User = get_user_model()
 
 
@@ -191,3 +194,11 @@ ManagedOrderItemFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True,
 )
+
+
+
+
+class ProductoForm(forms.ModelForm):
+    class Meta:
+        model = Producto
+        fields = ["nombre", "descripcion", "precio", "stock", "disponible"]

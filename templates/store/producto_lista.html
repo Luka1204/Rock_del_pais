@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'store/tienda.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="store-container">
+  <div class="store-header">
+    <h1>Tienda</h1>
+    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
+      <a href="{% url 'producto_crear' %}" class="btn btn-primary">+ Nuevo producto</a>
+    {% endif %}
+  </div>
+
+  {% if productos %}
+    <div class="table-wrapper">
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for producto in productos %}
+            <tr>
+              <td>
+                <a href="{% url 'producto_detalle' producto.pk %}" class="product-link">
+                  {{ producto.nombre }}
+                </a>
+              </td>
+              <td class="price-tag">${{ producto.precio }}</td>
+              <td>
+                {% if producto.stock > 0 %}
+                  <span class="badge-stock">{{ producto.stock }} disp.</span>
+                {% else %}
+                  <span class="badge-stock out">Sin stock</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <a href="{% url 'producto_detalle' producto.pk %}" class="btn btn-secondary btn-sm">Ver</a>
+                  {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
+                    <a href="{% url 'producto_editar' producto.pk %}" class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{% url 'producto_eliminar' producto.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No hay productos cargados todavía.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

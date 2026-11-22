@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{{ producto.nombre }}</h1>
+  <p><strong>Precio:</strong> ${{ producto.precio }}</p>
+  <p><strong>Stock:</strong> {{ producto.stock }}</p>
+  <p><strong>Disponible:</strong> {% if producto.disponible %}Sí{% else %}No{% endif %}</p>
+  <p><strong>Descripción:</strong> {{ producto.descripcion|default:"Sin descripción" }}</p>
+
+  <p>
+    <a href="{% url 'producto_lista' %}">Volver al listado</a>
+    {% if user.is_authenticated and user.is_staff or user.is_authenticated and user.is_superuser %}
+      | <a href="{% url 'producto_editar' producto.pk %}">Editar</a>
+      | <a href="{% url 'producto_eliminar' producto.pk %}">Eliminar</a>
+    {% endif %}
+  </p>
+{% endblock %}
