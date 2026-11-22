@@ -1,22 +1,17 @@
 {% extends "base.html" %}
-{% load static %}
+{%load static %}
 
-{% block title %}Iniciar sesión | Rock del País{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'store/auth.css' %}">{% endblock %}
+{% block title %}Rock del País{% endblock %}
 
 {% block content %}
-<section class="auth-page wrap">
-  <div class="auth-card">
-    <span class="auth-eyebrow">Rock del País</span>
+
+  <div class="login-container">
     <h1>Iniciar sesión</h1>
-    <p class="auth-intro">Volvé a conectarte con la música que te gusta.</p>
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
-      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
       {{ form.as_p }}
       <button type="submit">Ingresar</button>
     </form>
-    <p class="auth-switch">¿Todavía no tenés cuenta? <a href="{% url 'register' %}">Creá una cuenta</a></p>
+    <p>¿No tienes una cuenta? <a href="{% url 'register' %}">Regístrate aquí</a></p>
   </div>
-</section>
 {% endblock %}
