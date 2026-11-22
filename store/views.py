@@ -239,7 +239,7 @@ def verify_email_code(request):
 @require_POST
 def resend_email_code(request):
     user, pending = _pending_user(request)
-    if not user:
+    if not user:    
         messages.error(request, "Iniciá sesión para solicitar un código de verificación.")
         return redirect("login")
     result = issue_code(user, pending["token"])

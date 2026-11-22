@@ -1,4 +1,7 @@
-
+/* ==========================================================================
+   1. VARIABLES Y BASE GENERAL
+   Define colores, sombras y estilos generales del cuerpo y contenedor.
+   ========================================================================== */
 :root {
   --bg-page: #121214;
   --bg-card: #1c1c21;
@@ -13,25 +16,45 @@
   --danger-hover: #dc2626;
   --success: #10b981;
   --radius: 10px;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-body {
-  background-color: var(--bg-page);
-  color: var(--text-main);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  margin: 0;
-  padding: 0;
-  line-height: 1.5;
-}
-
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);}
 .store-container {
   max-width: 1100px;
   margin: 2rem auto;
   padding: 0 1.25rem;
 }
 
+/* ==========================================================================
+   2. BARRA DE NAVEGACIÓN SUPERIOR (CONTRASTE EN LA TIENDA)
+   Evita que los enlaces del header queden claros/ilegibles sobre fondo claro.
+   ========================================================================== */
+body .site-header .brand,
+body .site-header .brand span,
+body .site-header .main-nav a,
+body .site-header .header-actions a,
+body .site-header .header-actions button {
+  color: #171715 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 
+.site-header .brand:hover,
+.main-nav a:hover,
+.header-actions a:hover {
+  color: #d97706 !important;
+  opacity: 1 !important;
+}
+
+/* Mantener el badge del carrito en blanco sobre su círculo rojo */
+.header-actions .cart-count,
+.header-actions [class*="badge"],
+.header-actions [class*="count"] {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   3. ENCABEZADO DE LA TIENDA Y BOTONES
+   Título principal de la vista y variantes de botones (.btn-*).
+   ========================================================================== */
 .store-header {
   display: flex;
   justify-content: space-between;
@@ -100,7 +123,10 @@ body {
   font-size: 0.82rem;
 }
 
-
+/* ==========================================================================
+   4. TABLA DE PRODUCTOS (LISTADO DE LA TIENDA)
+   Contenedor, filas, precios, etiquetas de stock y botones de acción.
+   ========================================================================== */
 .table-wrapper {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -179,7 +205,10 @@ body {
   flex-wrap: wrap;
 }
 
-
+/* ==========================================================================
+   5. DETALLE DE PRODUCTO
+   Tarjeta para la vista individual de un producto.
+   ========================================================================== */
 .detail-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -211,7 +240,10 @@ body {
   margin-bottom: 1.5rem;
 }
 
-
+/* ==========================================================================
+   6. FORMULARIO DE EDICIÓN Y CREACIÓN (PANEL ADMIN)
+   Estilos de tarjeta, inputs, select, checkbox, errores y botones del form.
+   ========================================================================== */
 .admin-form-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -317,6 +349,10 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
+/* ==========================================================================
+   7. ESTADO VACÍO Y RESPONSIVE (MÓVILES)
+   Mensaje cuando no hay productos y ajuste a una columna en pantallas chicas.
+   ========================================================================== */
 .empty-state {
   text-align: center;
   padding: 3rem 1.5rem;
