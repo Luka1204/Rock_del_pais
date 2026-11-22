@@ -34,6 +34,15 @@ from .forms import (
 )
 from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
 from .otp import MAX_ATTEMPTS, code_digest, issue_code, valid_email
+
+from .forms import ProductoForm
+from .models import Producto
+
+
+from django.core.exceptions import PermissionDenied
+
+
+
 def home(request):
     return render(request, "store/home.html")
 
@@ -230,7 +239,7 @@ def verify_email_code(request):
 @require_POST
 def resend_email_code(request):
     user, pending = _pending_user(request)
-    if not user:
+    if not user:    
         messages.error(request, "Iniciá sesión para solicitar un código de verificación.")
         return redirect("login")
     result = issue_code(user, pending["token"])
@@ -246,3 +255,120 @@ def logout_view(request):
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect("home")
 # Create your views here.
+
+
+
+
+def producto_lista(request):
+    productos = Producto.objects.all()
+    return render(request, "store/producto_lista.html", {"productos": productos})
+
+
+def producto_detalle(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    return render(request, "store/producto_detalle.html", {"producto": producto})
+
+
+@login_required
+def producto_crear(request):
+    if request.method == "POST":
+        form = ProductoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("producto_lista")
+    else:
+        form = ProductoForm()
+    return render(
+        request,
+        "store/producto_form.html",
+        {"form": form, "titulo": "Crear producto"},
+    )
+
+
+@login_required
+def producto_editar(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == "POST":
+        form = ProductoForm(request.POST, instance=producto)
+        if form.is_valid():
+            form.save()
+            return redirect("producto_lista")
+    else:
+        form = ProductoForm(instance=producto)
+    return render(
+        request,
+        "store/producto_form.html",
+        {"form": form, "titulo": "Editar producto"},
+    )
+
+
+@login_required
+def producto_eliminar(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == "POST":
+        producto.delete()
+        return redirect("producto_lista")
+    return render(
+        request,
+        "store/producto_confirmar_eliminar.html",
+        {"producto": producto},
+    )
+
+
+
+def admin_requerido(view_func):
+    
+    @login_required
+    def _wrapped_view(request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            raise PermissionDenied("No tenés permisos de administrador.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+
+
+def producto_lista(request):
+    productos = Producto.objects.all()
+    return render(request, "store/producto_lista.html", {"productos": productos})
+
+
+def producto_detalle(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    return render(request, "store/producto_detalle.html", {"producto": producto})
+
+
+@admin_requerido
+def producto_crear(request):
+    if request.method == "POST":
+        form = ProductoForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Producto creado correctamente.")
+            return redirect("producto_lista")
+    else:
+        form = ProductoForm()
+    return render(request, "store/producto_form.html", {"form": form, "accion": "Crear"})
+
+
+@admin_requerido
+def producto_editar(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == "POST":
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Producto actualizado correctamente.")
+            return redirect("producto_lista")
+    else:
+        form = ProductoForm(instance=producto)
+    return render(request, "store/producto_form.html", {"form": form, "accion": "Editar"})
+
+
+@admin_requerido
+def producto_eliminar(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == "POST":
+        producto.delete()
+        messages.success(request, "Producto eliminado correctamente.")
+        return redirect("producto_lista")
+    return render(request, "store/producto_confirmar_eliminar.html", {"producto": producto})

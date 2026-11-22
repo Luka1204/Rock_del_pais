@@ -1,60 +1,194 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}Rock del País | Inicio{% endblock %}
+{% block title %}Rock del País — Banderas en tu corazon {% endblock %}
 
 {% block extra_head %}
-  <link rel="stylesheet" href="{% static 'store/home.css' %}">
+<link rel="stylesheet" href="{% static 'store/home.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="rdp-home-wrapper">
-  <section class="rdp-home-hero" aria-labelledby="home-title">
-    <div class="wrap rdp-home-grid">
-      <div>
-        <span class="rdp-kicker">Rock del País · Inicio</span>
-        <h1 id="home-title">Música para escuchar y tocar.</h1>
-        <p class="rdp-lead">
-          Un espacio dedicado a la cultura del rock argentino, los discos que marcaron época y el equipo que acompaña cada ensayo y escenario.
+<main class="home-page">
+
+  <!-- HERO PRINCIPAL -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">ROCK ARGENTINO · DISQUERÍA & INSTRUMENTOS</span>
+        <h1 class="hero-title">El sonido que marcó una época, listo para sonar en tu casa.</h1>
+        <p class="hero-subtitle">
+          Vinilos de colección, ediciones remasterizadas en CD, guitarras, amplificadores y accesorios seleccionados para quienes viven la música arriba y abajo del escenario.
         </p>
-        <div class="rdp-actions">
-          <a class="rdp-btn-primary" href="{% url 'home' %}#productos">Ir a productos</a>
-          <a class="rdp-btn-secondary" href="#identidad">Nuestra identidad</a>
+        <div class="hero-actions">
+          <a href="{% url 'producto_lista' %}" class="btn-primary">Explorar tienda</a>
+          <a href="#la-historia" class="btn-secondary">Conocer nuestra historia</a>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric-item">
+            <strong>100%</strong>
+            <span>Ediciones originales y garantizadas</span>
+          </div>
+          <div class="metric-item">
+            <strong>24–48 hs</strong>
+            <span>Despacho rápido a todo el país</span>
+          </div>
+          <div class="metric-item">
+            <strong>Asesoramiento</strong>
+            <span>Por músicos y coleccionistas</span>
+          </div>
         </div>
       </div>
 
-      <aside class="rdp-card" aria-label="Presentación">
-        <strong>Del otro lado del mostrador</strong>
-        <p>
-          Seleccionamos ediciones, instrumentos y equipamiento pensando en quienes escuchan cada detalle y viven la música todos los días.
-        </p>
-      </aside>
-    </div>
-  </section>
-
-  <section class="rdp-highlights" id="identidad" aria-labelledby="identidad-title">
-    <div class="wrap">
-      <h2 id="identidad-title" class="rdp-sr-only">Identidad de Rock del País</h2>
-      <div class="rdp-highlights-grid">
-        <article class="rdp-highlight-item">
-          <span class="rdp-highlight-num">01</span>
-          <h2>Cultura y Memoria</h2>
-          <p>Celebramos los discos, sonidos y referentes que construyeron nuestra identidad musical.</p>
-        </article>
-
-        <article class="rdp-highlight-item">
-          <span class="rdp-highlight-num">02</span>
-          <h2>Sonido Real</h2>
-          <p>Equipos e instrumentos elegidos con criterio técnico para estudio, ensayo y vivo.</p>
-        </article>
-
-        <article class="rdp-highlight-item">
-          <span class="rdp-highlight-num">03</span>
-          <h2>Cercanía y Respaldo</h2>
-          <p>Atención directa, envíos cuidados a todo el país y acompañamiento en cada paso.</p>
-        </article>
+      <div class="hero-visual">
+        <div class="vinyl-showcase">
+          <div class="vinyl-disc">
+            <div class="vinyl-label">
+              <span>RDP</span>
+              <small>33⅓ RPM</small>
+            </div>
+          </div>
+          <div class="showcase-card">
+            <span class="badge-tag">SELECCIÓN DE LA SEMANA</span>
+            <h3>Clásicos Nacionales & Equipamiento</h3>
+            <p>Desde joyas del rock nacional hasta pedales y guitarras listos para enchufar.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
-</div>
+
+  <!-- CATEGORÍAS RÁPIDAS -->
+  <section class="categories-section">
+    <div class="section-container">
+      <div class="section-header">
+        <div>
+          <span class="section-kicker">CATÁLOGO</span>
+          <h2>¿Qué estás buscando hoy?</h2>
+        </div>
+        <a href="{% url 'producto_lista' %}" class="link-arrow">Ver todo el catálogo →</a>
+      </div>
+
+      <div class="categories-grid">
+        <a href="{% url 'producto_lista' %}" class="category-card">
+          <span class="cat-number">01</span>
+          <h3>Vinilos & CDs</h3>
+          <p>Prensajes de 180g, reediciones históricas y discos esenciales del rock argentino.</p>
+        </a>
+        <a href="{% url 'producto_lista' %}" class="category-card">
+          <span class="cat-number">02</span>
+          <h3>Guitarras & Bajos</h3>
+          <p>Instrumentos calibrados y listos para salir a tocar en sala o en vivo.</p>
+        </a>
+        <a href="{% url 'producto_lista' %}" class="category-card">
+          <span class="cat-number">03</span>
+          <h3>Amplificadores & Pedales</h3>
+          <p>Combos valvulares, transistorizados y efectos analógicos con carácter propio.</p>
+        </a>
+        <a href="{% url 'producto_lista' %}" class="category-card">
+          <span class="cat-number">04</span>
+          <h3>Cables & Accesorios</h3>
+          <p>Cables mallados, púas, correas y todo lo necesario para tu setup diario.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTOS DESTACADOS -->
+  <section class="featured-section">
+    <div class="section-container">
+      <div class="section-header">
+        <div>
+          <span class="section-kicker">INGRESOS RECIENTES</span>
+          <h2>Destacados de la tienda</h2>
+        </div>
+        <a href="{% url 'producto_lista' %}" class="btn-outline-dark">Ir a la tienda</a>
+      </div>
+
+      <div class="products-grid">
+        {% if productos_destacados %}
+          {% for producto in productos_destacados %}
+          <article class="product-card">
+            <div class="product-card-top">
+              <span class="stock-pill {% if producto.stock > 0 %}in-stock{% else %}out-stock{% endif %}">
+                {% if producto.stock > 0 %}{{ producto.stock }} disp.{% else %}Sin stock{% endif %}
+              </span>
+            </div>
+            <h3>{{ producto.nombre }}</h3>
+            <p class="product-desc">{{ producto.descripcion|truncatechars:95 }}</p>
+            <div class="product-card-footer">
+              <span class="product-price">${{ producto.precio }}</span>
+              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
+            </div>
+          </article>
+          {% endfor %}
+        {% else %}
+          <article class="product-card">
+            <div class="product-card-top"><span class="stock-pill in-stock">8 disp.</span></div>
+            <h3>Artaud — Pescado Rabioso (Vinilo 180g)</h3>
+            <p class="product-desc">Clásico álbum de 1973 en vinilo de alto gramaje con sonido remasterizado.</p>
+            <div class="product-card-footer">
+              <span class="product-price">$48.500</span>
+              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
+            </div>
+          </article>
+          <article class="product-card">
+            <div class="product-card-top"><span class="stock-pill in-stock">4 disp.</span></div>
+            <h3>Guitarra Eléctrica Tipo Stratocaster Negra</h3>
+            <p class="product-desc">Cuerpo sólido, tres micrófonos single-coil y selector de 5 posiciones.</p>
+            <div class="product-card-footer">
+              <span class="product-price">$310.000</span>
+              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
+            </div>
+          </article>
+          <article class="product-card">
+            <div class="product-card-top"><span class="stock-pill in-stock">10 disp.</span></div>
+            <h3>Pedal Overdrive Clásico para Guitarra</h3>
+            <p class="product-desc">Saturación analógica cálida y dinámica para empujar tu amplificador.</p>
+            <div class="product-card-footer">
+              <span class="product-price">$74.000</span>
+              <a href="{% url 'producto_lista' %}" class="btn-card">Ver en tienda</a>
+            </div>
+          </article>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- LA HISTORIA -->
+  <section class="story-section" id="la-historia">
+    <div class="section-container story-grid">
+      <div class="story-content">
+        <span class="section-kicker">LA HISTORIA</span>
+        <h2>Nacimos entre bateas de discos y salas de ensayo.</h2>
+        <p>
+          <strong>Rock del País</strong> surgió con una idea simple: reunir en un mismo lugar los discos que construyeron nuestra identidad musical y las herramientas para seguir creando canciones nuevas.
+        </p>
+        <p>
+          Cada edición y cada instrumento pasa por una revisión detallada antes de llegar a tus manos, cuidando el embalaje y la fidelidad en cada envío.
+        </p>
+      </div>
+      <div class="story-quote-box">
+        <blockquote>
+          “Un buen disco se escucha con el cuerpo entero; un buen instrumento te pide que lo vuelvas a enchufar.”
+        </blockquote>
+        <span class="quote-author">— Equipo Rock del País</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO / CTA FINAL -->
+  <section class="contact-section" id="contacto">
+    <div class="section-container contact-banner">
+      <div>
+        <span class="section-kicker">CONTACTO Y ASESORAMIENTO</span>
+        <h2>¿Buscás una edición especial o querés consultar por un equipo?</h2>
+        <p>Escribinos y te ayudamos a encontrar el disco o el instrumento ideal para vos.</p>
+      </div>
+      <div class="contact-actions">
+        <a href="{% url 'producto_lista' %}" class="btn-primary">Ver catálogo completo</a>
+      </div>
+    </div>
+  </section>
+
+</main>
 {% endblock %}

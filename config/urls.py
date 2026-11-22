@@ -14,21 +14,30 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+from django.urls import include
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from store import views
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path('admin/login/', views.admin_login, name='admin_login_otp'),
-    path('admin/', admin.site.urls),
-    path('management/categories/', views.management_category_list, name='management_category_list'),
-    path('management/categories/create/', views.category_create, name='category_create'),
-    path('management/categories/edit/<int:category_id>/', views.category_edit, name='category_edit'),
-    path('management/categories/delete/<int:category_id>/', views.category_delete, name='category_delete'),
-    path('register/', views.register, name='register'),
-    path('logout/', views.logout_view, name='logout'),
-    path('login/', views.login_view, name='login'),
-    path('verify-email-code/', views.verify_email_code, name='verify_email_code'),
-    path('verify-email-code/resend/', views.resend_email_code, name='resend_email_code'),
+    path("admin/login/", views.admin_login, name="admin_login_otp"),
+    path("admin/", admin.site.urls),
+    path("management/categories/", views.management_category_list, name="management_category_list"),
+    path("management/categories/create/", views.category_create, name="category_create"),
+    path("management/categories/edit/<int:pk>/", views.category_edit, name="category_edit"),
+    path("management/categories/delete/<int:pk>/", views.category_delete, name="category_delete"),
+    path("register/", views.register, name="register"),
+    path("logout/", views.logout_view, name="logout"),
+    path("login/", views.login_view, name="login"),
+    path("verify-email-code/", views.verify_email_code, name="verify_email_code"),
+    path("verify-email-code/resend/", views.resend_email_code, name="resend_email_code"),
+
+    # Rutas del CRUD de productos:
+    path("productos/", views.producto_lista, name="producto_lista"),
+    path("productos/nuevo/", views.producto_crear, name="producto_crear"),
+    path("productos/<int:pk>/", views.producto_detalle, name="producto_detalle"),
+    path("productos/<int:pk>/editar/", views.producto_editar, name="producto_editar"),
+    path("productos/<int:pk>/eliminar/", views.producto_eliminar, name="producto_eliminar"),
 ]
