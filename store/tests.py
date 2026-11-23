@@ -359,7 +359,9 @@ class ProductCatalogTests(TestCase):
             ("management_home", []), ("management_product_list", []),
             ("management_category_list", []), ("category_create", []),
             ("category_edit", [self.category.pk]), ("category_delete", [self.category.pk]),
-            ("management_order_list", []), ("management_user_list", []),
+            ("management_order_list", []), ("management_order_edit", [1]),
+            ("management_user_list", []), ("management_user_create", []),
+            ("management_user_edit", [1]), ("management_user_delete", [1]),
             ("management_consultation_list", []),
         ]
         for name, args in routes:
@@ -409,6 +411,121 @@ class ProductCatalogTests(TestCase):
         response = self.client.post(reverse("category_delete", args=[self.category.pk]), follow=True)
         self.assertContains(response, "No se puede eliminar una categoría con productos")
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
+
+    def test_staff_can_manage_order_status_and_reserved_stock(self):
+        order = Order.objects.create(
+            full_name="Cliente prueba", email="cliente@example.com", phone="123",
+            address="Retiro", payment_method=Order.PaymentMethod.CASH, total="2500.00",
+        )
+        OrderItem.objects.create(
+            order=order, product=self.product, product_name=self.product.name,
+            unit_price=self.product.price, quantity=2,
+        )
+        self.product.stock = 1
+        self.product.save()
+        self.login_staff()
+
+        edit_url = reverse("management_order_edit", args=[order.pk])
+        self.assertContains(self.client.get(edit_url), "En despacho")
+        order_data = {
+            "full_name": order.full_name,
+            "email": order.email,
+            "phone": order.phone,
+            "address": order.address,
+            "delivery_notes": "",
+            "payment_method": Order.PaymentMethod.CASH,
+            "status": Order.Status.CANCELLED,
+        }
+        response = self.client.post(edit_url, order_data)
+        self.assertRedirects(response, reverse("management_order_list"))
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+        self.assertFalse(order.stock_reserved)
+        self.assertEqual(self.product.stock, 3)
+
+        order_data["status"] = Order.Status.IN_TRANSIT
+        response = self.client.post(edit_url, order_data)
+        self.assertRedirects(response, reverse("management_order_list"))
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.IN_TRANSIT)
+        self.assertTrue(order.stock_reserved)
+        self.assertEqual(self.product.stock, 1)
+
+        order_data["status"] = Order.Status.CANCELLED
+        self.client.post(edit_url, order_data)
+        self.product.stock = 0
+        self.product.save()
+        order_data["status"] = Order.Status.IN_TRANSIT
+        response = self.client.post(edit_url, order_data)
+        self.assertContains(response, "No hay stock suficiente")
+        order.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CANCELLED)
+        self.assertFalse(order.stock_reserved)
+        self.assertEqual(self.product.stock, 0)
+
+    def test_staff_can_create_edit_and_delete_users_with_roles(self):
+        self.login_staff()
+        create_url = reverse("management_user_create")
+        self.assertContains(
+            self.client.post(create_url, {}),
+            "Este campo es obligatorio",
+        )
+        response = self.client.post(create_url, {
+            "username": "nuevo",
+            "email": "nuevo@example.com",
+            "first_name": "Nuevo",
+            "last_name": "Usuario",
+            "role": "administrador",
+            "password1": "Una-clave-segura-123!",
+            "password2": "Una-clave-segura-123!",
+        })
+        self.assertRedirects(response, reverse("management_user_list"))
+        account = get_user_model().objects.get(username="nuevo")
+        self.assertTrue(account.is_staff)
+
+        edit_url = reverse("management_user_edit", args=[account.pk])
+        response = self.client.post(edit_url, {
+            "username": "nuevo",
+            "email": "nuevo@example.com",
+            "first_name": "Nuevo",
+            "last_name": "Usuario",
+            "role": "cliente",
+            "is_active": "on",
+        })
+        self.assertRedirects(response, reverse("management_user_list"))
+        account.refresh_from_db()
+        self.assertFalse(account.is_staff)
+
+        delete_url = reverse("management_user_delete", args=[account.pk])
+        self.assertEqual(self.client.get(delete_url).status_code, 200)
+        response = self.client.post(delete_url)
+        self.assertRedirects(response, reverse("management_user_list"))
+        self.assertFalse(get_user_model().objects.filter(pk=account.pk).exists())
+
+    def test_staff_cannot_remove_their_own_admin_role_or_delete_themselves(self):
+        self.login_staff()
+        edit_url = reverse("management_user_edit", args=[self.staff.pk])
+        response = self.client.post(edit_url, {
+            "username": self.staff.username,
+            "email": "",
+            "first_name": "",
+            "last_name": "",
+            "role": "cliente",
+            "is_active": "",
+        })
+        self.assertRedirects(response, reverse("management_user_list"))
+        self.staff.refresh_from_db()
+        self.assertTrue(self.staff.is_staff)
+        self.assertTrue(self.staff.is_active)
+
+        response = self.client.post(
+            reverse("management_user_delete", args=[self.staff.pk]), follow=True
+        )
+        self.assertContains(response, "No podés eliminar tu propio usuario")
+        self.assertTrue(get_user_model().objects.filter(pk=self.staff.pk).exists())
 
 
 class ConsultationTests(TestCase):

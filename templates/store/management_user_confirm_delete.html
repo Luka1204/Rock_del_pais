@@ -1,0 +1,16 @@
+{% extends "store/management_base.html" %}
+{% block title %}Eliminar usuario | Gestión{% endblock %}
+{% block management_content %}
+<section class="edit-card">
+  <span class="shop-kicker">USUARIOS</span>
+  <h2>Eliminar usuario</h2>
+  <p>¿Querés eliminar a <strong>{{ account.username }}</strong>? Esta acción no se puede deshacer.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="edit-actions">
+      <button class="shop-button" type="submit">Eliminar usuario</button>
+      <a class="shop-button shop-button-outline" href="{% url 'management_user_list' %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

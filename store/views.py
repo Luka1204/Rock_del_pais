@@ -281,10 +281,156 @@ def management_order_list(request):
 
 
 @admin_requerido
+def management_order_edit(request, pk):
+    order_query = Order.objects.prefetch_related("items")
+    if request.method == "POST":
+        with transaction.atomic():
+            order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+            previous_status = order.status
+            form = ManagedOrderForm(request.POST, instance=order)
+            if form.is_valid():
+                new_status = form.cleaned_data["status"]
+                items = list(order.items.select_related("product").order_by("pk"))
+                quantities = {}
+                for item in items:
+                    if item.product_id:
+                        quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
+
+                products = {
+                    product.pk: product
+                    for product in Product.objects.select_for_update()
+                    .filter(pk__in=quantities)
+                    .order_by("pk")
+                }
+
+                if (
+                    previous_status != Order.Status.CANCELLED
+                    and new_status == Order.Status.CANCELLED
+                    and order.stock_reserved
+                ):
+                    for product_id, quantity in quantities.items():
+                        product = products.get(product_id)
+                        if product:
+                            product.stock += quantity
+                            product.save(update_fields=("stock", "updated_at"))
+                    order.stock_reserved = False
+                elif (
+                    previous_status == Order.Status.CANCELLED
+                    and new_status != Order.Status.CANCELLED
+                    and not order.stock_reserved
+                ):
+                    if any(not item.product_id for item in items):
+                        form.add_error("status", "No se puede reactivar el pedido: hay productos que ya no existen.")
+                    else:
+                        unavailable = next(
+                            (
+                                product
+                                for product_id, product in products.items()
+                                if product.stock < quantities[product_id]
+                            ),
+                            None,
+                        )
+                        if unavailable:
+                            form.add_error(
+                                "status",
+                                f"No hay stock suficiente de {unavailable.name} para reactivar el pedido.",
+                            )
+                        else:
+                            for product_id, quantity in quantities.items():
+                                product = products[product_id]
+                                product.stock -= quantity
+                                product.save(update_fields=("stock", "updated_at"))
+                            order.stock_reserved = True
+
+                if form.errors:
+                    return render(
+                        request,
+                        "store/management_order_form.html",
+                        {"form": form, "order": order, "title": f"Editar pedido #{order.pk}"},
+                    )
+                form.save()
+                order.save(update_fields=("stock_reserved",))
+                messages.success(request, f"Actualizamos el pedido #{order.pk}.")
+                return redirect("management_order_list")
+    else:
+        order = get_object_or_404(order_query, pk=pk)
+        form = ManagedOrderForm(instance=order)
+    return render(
+        request,
+        "store/management_order_form.html",
+        {"form": form, "order": order, "title": f"Editar pedido #{order.pk}"},
+    )
+
+
+@admin_requerido
 def management_user_list(request):
+    User = get_user_model()
     return render(request, "store/management_user_list.html", {
-        "users": get_user_model().objects.order_by("username"),
+        "users": User.objects.filter(is_superuser=False).order_by("username"),
     })
+
+
+@admin_requerido
+def management_user_create(request):
+    form = ManagedUserCreationForm(
+        request.POST if request.method == "POST" else None
+    )
+    if request.method == "POST" and form.is_valid():
+        account = form.save(commit=False)
+        account.is_staff = form.cleaned_data["role"] == "administrador"
+        account.save()
+        form.save_m2m()
+        messages.success(request, f"Creamos el usuario {account.username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_form.html",
+        {"form": form, "title": "Nuevo usuario"},
+    )
+
+
+@admin_requerido
+def management_user_edit(request, pk):
+    User = get_user_model()
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    form = ManagedUserChangeForm(
+        request.POST if request.method == "POST" else None,
+        instance=account,
+    )
+    if account.pk == request.user.pk:
+        form.fields["role"].disabled = True
+        form.fields["is_active"].disabled = True
+    if request.method == "POST" and form.is_valid():
+        account = form.save(commit=False)
+        account.is_staff = form.cleaned_data["role"] == "administrador"
+        account.save()
+        form.save_m2m()
+        messages.success(request, f"Actualizamos el usuario {account.username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_form.html",
+        {"form": form, "title": f"Editar usuario {account.username}", "account": account},
+    )
+
+
+@admin_requerido
+def management_user_delete(request, pk):
+    User = get_user_model()
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    if account.pk == request.user.pk:
+        messages.error(request, "No podés eliminar tu propio usuario.")
+        return redirect("management_user_list")
+    if request.method == "POST":
+        username = account.username
+        account.delete()
+        messages.success(request, f"Eliminamos el usuario {username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_confirm_delete.html",
+        {"account": account},
+    )
 
 
 @admin_requerido
