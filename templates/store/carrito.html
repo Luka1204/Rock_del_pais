@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Carrito — Rock del País{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'store/tienda.css' %}">
+<link rel="stylesheet" href="{% static 'store/carrito.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="shop wrap cart-page">
+  <div class="shop-heading">
+    <span class="shop-kicker">TU COMPRA</span>
+    <h1>Carrito</h1>
+  </div>
+
+  {% if cart_items %}
+    <div class="cart-layout">
+      <div class="cart-items">
+        {% for item in cart_items %}
+          <article class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-image">
+                {% if item.producto.image_url %}
+                  <img src="{{ item.producto.image_url }}" alt="" loading="lazy">
+                {% else %}
+                  <span aria-hidden="true">RDP</span>
+                {% endif %}
+              </div>
+              <div>
+                <h2>{{ item.producto.name }}</h2>
+                <p>${{ item.producto.price }} x {{ item.quantity }}</p>
+              </div>
+            </div>
+            <strong>${{ item.subtotal }}</strong>
+            <div class="cart-item-actions">
+              <div class="cart-quantity-controls" aria-label="Cambiar cantidad de {{ item.producto.name }}">
+                <form method="post" action="{% url 'quitar_del_carrito' item.producto.pk %}">
+                  {% csrf_token %}
+                  <button class="cart-quantity-button" type="submit" aria-label="Restar una unidad de {{ item.producto.name }}">−</button>
+                </form>
+                <span>{{ item.quantity }}</span>
+                <form method="post" action="{% url 'agregar_al_carrito' item.producto.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'carrito' %}">
+                  <button class="cart-quantity-button" type="submit" aria-label="Sumar una unidad de {{ item.producto.name }}" {% if item.quantity >= item.producto.stock %}disabled{% endif %}>+</button>
+                </form>
+              </div>
+              <form method="post" action="{% url 'eliminar_del_carrito' item.producto.pk %}">
+                {% csrf_token %}
+                <button class="cart-remove-button" type="submit">Quitar del carrito</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      <aside class="cart-summary">
+        <h2>Resumen</h2>
+        <p>Total: <strong>${{ cart_total }}</strong></p>
+        <a class="shop-button" href="{% url 'producto_lista' %}">Seguir comprando</a>
+      </aside>
+    </div>
+  {% else %}
+    <div class="cart-empty">
+      <p>Tu carrito está vacío.</p>
+      <a class="shop-button" href="{% url 'producto_lista' %}">Ir a la tienda</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

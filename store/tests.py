@@ -270,6 +270,44 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, response.context["filter_form"].errors["category"][0])
         self.assertEqual(list(response.context["productos"]), [])
 
+    def test_cart_quantity_controls_and_product_thumbnail(self):
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 2}
+        session.save()
+
+        response = self.client.get(reverse("carrito"))
+        self.assertContains(response, "cart-item-image")
+        self.assertContains(response, "RDP")
+
+        self.client.post(reverse("agregar_al_carrito", args=[self.product.pk]))
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 3})
+        self.client.post(reverse("agregar_al_carrito", args=[self.product.pk]))
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 3})
+
+        response = self.client.post(reverse("quitar_del_carrito", args=[self.product.pk]))
+        self.assertRedirects(response, reverse("carrito"))
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 2})
+
+        self.client.post(reverse("quitar_del_carrito", args=[self.product.pk]))
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 1})
+
+        self.client.post(reverse("quitar_del_carrito", args=[self.product.pk]))
+        self.assertEqual(self.client.session["cart"], {})
+
+    def test_removing_item_from_cart_keeps_other_items(self):
+        other_product = Product.objects.create(
+            name="Otro disco", description="Edición especial", category=self.category,
+            price="1500.00", stock=4,
+        )
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 2, str(other_product.pk): 1}
+        session.save()
+
+        response = self.client.post(reverse("eliminar_del_carrito", args=[self.product.pk]))
+
+        self.assertRedirects(response, reverse("carrito"))
+        self.assertEqual(self.client.session["cart"], {str(other_product.pk): 1})
+
     def test_management_requires_administrator_for_every_route(self):
         routes = [
             ("management_home", []), ("management_product_list", []),
