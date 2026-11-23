@@ -407,6 +407,7 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect("home")
+
 def _productos_visibles(request):
     products = Product.objects.select_related("category")
     if not (request.user.is_staff or request.user.is_superuser):
