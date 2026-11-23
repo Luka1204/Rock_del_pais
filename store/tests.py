@@ -363,3 +363,42 @@ class ProductCatalogTests(TestCase):
         response = self.client.post(reverse("category_delete", args=[self.category.pk]), follow=True)
         self.assertContains(response, "No se puede eliminar una categoría con productos")
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
+
+
+class ConsultationTests(TestCase):
+    def test_valid_contact_submission_is_persisted(self):
+        response = self.client.post(
+            reverse("contact"),
+            {
+                "name": "Visitante de prueba",
+                "email": "visitante@example.com",
+                "subject": "Consulta de prueba",
+                "message": "Quisiera recibir más información.",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("contact"))
+        self.assertTrue(
+            Consultation.objects.filter(
+                name="Visitante de prueba",
+                email="visitante@example.com",
+                subject="Consulta de prueba",
+                message="Quisiera recibir más información.",
+            ).exists()
+        )
+        self.assertContains(response, "Consulta enviada con éxito")
+
+    def test_invalid_contact_submission_is_not_persisted(self):
+        response = self.client.post(
+            reverse("contact"),
+            {
+                "name": "",
+                "email": "correo-invalido",
+                "subject": "Consulta de prueba",
+                "message": "Mensaje",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Consultation.objects.count(), 0)

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contacto | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/auth.css' %}">{% endblock %}
+
+{% block content %}
+<section class="auth-page wrap">
+  <div class="auth-card">
+    <span class="auth-eyebrow">Rock del País</span>
+    <h1>Dejanos tu consulta</h1>
+    <p class="auth-intro">Escribinos por discos, instrumentos, pedidos o cualquier duda que tengas.</p>
+
+    {% if submitted %}
+      <div class="message message-success" role="status">
+        Consulta enviada con éxito. Gracias por comunicarte con Rock del País.
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'contact' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Enviar consulta</button>
+    </form>
+
+    <p class="auth-switch"><a href="{% url 'home' %}">Volver al inicio</a></p>
+  </div>
+</section>
+{% endblock %}
