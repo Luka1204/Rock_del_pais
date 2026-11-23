@@ -52,6 +52,116 @@ def home(request):
     products = Product.objects.filter(active=True, category__active=True).order_by("-created_at")[:3]
     return render(request, "store/home.html", {"productos_destacados": products})
 
+
+def carrito(request):
+    cart = request.session.get("cart", {})
+    if not isinstance(cart, dict):
+        cart = {}
+
+    items = []
+    total = Decimal("0")
+    valid_cart = {}
+    for product_id, quantity in cart.items():
+        try:
+            quantity = int(quantity)
+            product_id = int(product_id)
+        except (TypeError, ValueError):
+            continue
+        if quantity < 1:
+            continue
+
+        producto = _productos_visibles(request).filter(pk=product_id).first()
+        if not producto or producto.stock < 1:
+            continue
+
+        quantity = min(quantity, producto.stock)
+        subtotal = producto.price * quantity
+        total += subtotal
+        valid_cart[str(producto.pk)] = quantity
+        items.append({"producto": producto, "quantity": quantity, "subtotal": subtotal})
+
+    if valid_cart != cart:
+        request.session["cart"] = valid_cart
+        request.session.modified = True
+
+    return render(
+        request,
+        "store/carrito.html",
+        {"cart_items": items, "cart_total": total},
+    )
+
+
+@require_POST
+def agregar_al_carrito(request, pk):
+    producto = get_object_or_404(_productos_visibles(request), pk=pk)
+    if producto.stock < 1:
+        messages.error(request, "Este producto no tiene stock disponible.")
+        next_url = _safe_next(request, request.POST.get("next"))
+        return redirect(next_url or "producto_lista")
+
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+    except (TypeError, ValueError):
+        quantity = 1
+    quantity = max(1, min(quantity, 99))
+
+    cart = request.session.get("cart", {})
+    if not isinstance(cart, dict):
+        cart = {}
+
+    product_id = str(producto.pk)
+    try:
+        current_quantity = max(0, int(cart.get(product_id, 0) or 0))
+    except (TypeError, ValueError):
+        current_quantity = 0
+    new_quantity = min(current_quantity + quantity, producto.stock, 99)
+    cart[product_id] = new_quantity
+    request.session["cart"] = cart
+    request.session.modified = True
+
+    messages.success(request, f"Agregamos {producto.name} al carrito.")
+    next_url = _safe_next(request, request.POST.get("next"))
+    return redirect(next_url or "carrito")
+
+
+@require_POST
+def quitar_del_carrito(request, pk):
+    cart = request.session.get("cart", {})
+    if isinstance(cart, dict):
+        product_id = str(pk)
+        try:
+            quantity = int(cart.get(product_id, 0))
+        except (TypeError, ValueError):
+            quantity = 0
+
+        if quantity > 1:
+            cart[product_id] = quantity - 1
+            producto = Product.objects.filter(pk=pk).first()
+            messages.success(request, f"Quitamos una unidad de {producto.name}." if producto else "Quitamos una unidad del carrito.")
+        else:
+            cart.pop(product_id, None)
+            messages.success(request, "Quitamos el producto del carrito.")
+        request.session["cart"] = cart
+        request.session.modified = True
+    return redirect("carrito")
+
+
+@require_POST
+def eliminar_del_carrito(request, pk):
+    cart = request.session.get("cart", {})
+    if isinstance(cart, dict):
+        cart.pop(str(pk), None)
+        request.session["cart"] = cart
+        request.session.modified = True
+
+    producto = Product.objects.filter(pk=pk).first()
+    if producto:
+        messages.success(request, f"Quitamos {producto.name} del carrito.")
+    else:
+        messages.success(request, "Quitamos el producto del carrito.")
+    return redirect("carrito")
+
+
 @admin_requerido
 def management_home(request):
     return render(request, "store/management_home.html")

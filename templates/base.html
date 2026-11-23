@@ -47,7 +47,7 @@
           <a class="account-link" href="{% url 'login' %}">Ingresar</a>
           <a class="account-link" href="{% url 'register' %}">Crear cuenta</a>
         {% endif %}
-        <a class="cart-link" href="{% url 'home' %}" aria-label="Carrito con {{ cart_item_count }} productos">
+        <a class="cart-link" href="{% url 'carrito' %}" aria-label="Carrito con {{ cart_item_count }} productos">
           Carrito <span class="cart-count">{{ cart_item_count }}</span>
         </a>
       </div>

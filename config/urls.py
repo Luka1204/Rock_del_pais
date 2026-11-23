@@ -22,6 +22,11 @@ from store import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("carrito.html", views.carrito, name="carrito"),
+    path("carrito/", views.carrito, name="carrito_alias"),
+    path("carrito/agregar/<int:pk>/", views.agregar_al_carrito, name="agregar_al_carrito"),
+    path("carrito/quitar/<int:pk>/", views.quitar_del_carrito, name="quitar_del_carrito"),
+    path("carrito/eliminar/<int:pk>/", views.eliminar_del_carrito, name="eliminar_del_carrito"),
     path("admin/login/", views.admin_login, name="admin_login_otp"),
     path("admin/", admin.site.urls),
     path("management/", views.management_home, name="management_home"),
