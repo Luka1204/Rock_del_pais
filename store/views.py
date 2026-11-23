@@ -53,42 +53,141 @@ def home(request):
     return render(request, "store/home.html", {"productos_destacados": products})
 
 
-def carrito(request):
-    cart = request.session.get("cart", {})
-    if not isinstance(cart, dict):
-        cart = {}
+def _cart_snapshot(request, lock_products=False, public_only=False):
+    stored_cart = request.session.get("cart", {})
+    cart_is_dict = isinstance(stored_cart, dict)
+    raw_cart = stored_cart if cart_is_dict else {}
+
+    # Normalize session values; prices and stock always come from the database.
+    requested = {}
+    for product_id, quantity in raw_cart.items():
+        try:
+            product_id = int(product_id)
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            continue
+        if product_id > 0 and quantity > 0:
+            requested[product_id] = requested.get(product_id, 0) + quantity
+
+    products_query = Product.objects.select_related("category").filter(pk__in=requested)
+    if public_only or not (request.user.is_staff or request.user.is_superuser):
+        products_query = products_query.filter(active=True, category__active=True)
+    if lock_products:
+        products_query = products_query.select_for_update()
+    products = {product.pk: product for product in products_query.order_by("pk")}
 
     items = []
     total = Decimal("0")
     valid_cart = {}
-    for product_id, quantity in cart.items():
-        try:
-            quantity = int(quantity)
-            product_id = int(product_id)
-        except (TypeError, ValueError):
-            continue
-        if quantity < 1:
-            continue
-
-        producto = _productos_visibles(request).filter(pk=product_id).first()
+    for product_id, quantity in requested.items():
+        producto = products.get(product_id)
         if not producto or producto.stock < 1:
             continue
 
         quantity = min(quantity, producto.stock)
+        valid_cart[str(producto.pk)] = quantity
         subtotal = producto.price * quantity
         total += subtotal
-        valid_cart[str(producto.pk)] = quantity
         items.append({"producto": producto, "quantity": quantity, "subtotal": subtotal})
 
-    if valid_cart != cart:
+    cart_changed = not cart_is_dict or valid_cart != raw_cart
+    if cart_changed:
         request.session["cart"] = valid_cart
         request.session.modified = True
 
+    return items, total, cart_changed
+
+
+def carrito(request):
+    items, total, _ = _cart_snapshot(request)
     return render(
         request,
         "store/carrito.html",
         {"cart_items": items, "cart_total": total},
     )
+
+
+def checkout(request):
+    form = CheckoutForm(request.POST if request.method == "POST" else None)
+
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            # Lock products and re-check the session cart to prevent overselling.
+            cart_items, cart_total, cart_changed = _cart_snapshot(
+                request, lock_products=True, public_only=True
+            )
+            if cart_changed:
+                messages.warning(
+                    request,
+                    "El stock o la disponibilidad cambió. Revisá el carrito antes de confirmar.",
+                )
+                return redirect("carrito")
+            if not cart_items:
+                messages.error(request, "No hay productos disponibles para completar la compra.")
+                return redirect("carrito")
+
+            order = form.save(commit=False)
+            order.user = request.user if request.user.is_authenticated else None
+            order.total = cart_total
+            order.status = Order.Status.PENDING
+            order.stock_reserved = True
+            order.save()
+
+            for item in cart_items:
+                producto = item["producto"]
+                quantity = item["quantity"]
+
+                # Save a name/price snapshot so future catalog edits don't alter the order.
+                OrderItem.objects.create(
+                    order=order,
+                    product=producto,
+                    product_name=producto.name,
+                    unit_price=producto.price,
+                    quantity=quantity,
+                )
+                producto.stock -= quantity
+                producto.save(update_fields=("stock", "updated_at"))
+
+        # Payment is simulated; the order stays pending for store management.
+        request.session["cart"] = {}
+        request.session["last_checkout_order_id"] = order.pk
+        request.session.modified = True
+        messages.success(
+            request,
+            f"Pedido #{order.pk} creado. No se realizó ningún cobro real.",
+        )
+        return redirect("checkout_confirmacion")
+
+    cart_items, cart_total, cart_changed = _cart_snapshot(
+        request, public_only=True
+    )
+    if cart_changed:
+        messages.warning(
+            request,
+            "El stock o la disponibilidad cambió. Revisá el carrito antes de continuar.",
+        )
+        return redirect("carrito")
+    if not cart_items:
+        messages.error(request, "Agregá productos disponibles antes de continuar al checkout.")
+        return redirect("carrito")
+
+    return render(
+        request,
+        "store/checkout.html",
+        {"form": form, "cart_items": cart_items, "cart_total": cart_total},
+    )
+
+
+def checkout_confirmacion(request):
+    order_id = request.session.get("last_checkout_order_id")
+    if not order_id:
+        return redirect("carrito")
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        pk=order_id,
+    )
+    return render(request, "store/checkout_confirmacion.html", {"order": order})
 
 
 @require_POST

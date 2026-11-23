@@ -308,6 +308,52 @@ class ProductCatalogTests(TestCase):
         self.assertRedirects(response, reverse("carrito"))
         self.assertEqual(self.client.session["cart"], {str(other_product.pk): 1})
 
+    def test_checkout_creates_pending_order_and_reserves_stock(self):
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 2}
+        session.save()
+
+        response = self.client.post(reverse("checkout"), {
+            "full_name": "Cliente de prueba",
+            "email": "cliente@example.com",
+            "phone": "1122334455",
+            "address": "Calle 123",
+            "delivery_notes": "",
+            "payment_method": Order.PaymentMethod.CASH,
+        })
+
+        order = Order.objects.get()
+        item = order.items.get()
+        self.assertRedirects(
+            response, reverse("checkout_confirmacion"), fetch_redirect_response=False
+        )
+        self.assertEqual(order.total, self.product.price * 2)
+        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(item.product, self.product)
+        self.assertEqual(item.quantity, 2)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 1)
+        self.assertEqual(self.client.session["cart"], {})
+        self.assertContains(self.client.get(reverse("checkout_confirmacion")), "No se realizó ningún cobro")
+
+    def test_checkout_rejects_cart_quantity_over_current_stock(self):
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 4}
+        session.save()
+
+        response = self.client.post(reverse("checkout"), {
+            "full_name": "Cliente de prueba",
+            "email": "cliente@example.com",
+            "phone": "1122334455",
+            "address": "Calle 123",
+            "delivery_notes": "",
+            "payment_method": Order.PaymentMethod.CASH,
+        })
+
+        self.assertRedirects(response, reverse("carrito"))
+        self.assertFalse(Order.objects.exists())
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 3})
+
     def test_management_requires_administrator_for_every_route(self):
         routes = [
             ("management_home", []), ("management_product_list", []),

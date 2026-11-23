@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Checkout | Rock del País{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'store/tienda.css' %}">
+<link rel="stylesheet" href="{% static 'store/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="shop wrap checkout-page">
+  <div class="shop-heading">
+    <span class="shop-kicker">FINALIZAR COMPRA</span>
+    <h1>Datos del pedido</h1>
+    <p>Completá tus datos para registrar el pedido. El pago es una simulación y no se realizará ningún cobro.</p>
+  </div>
+
+  <div class="checkout-layout">
+    <form class="checkout-form" method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="checkout-errors" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="checkout-field">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+          {% if field.errors %}<div class="checkout-errors" role="alert">{{ field.errors }}</div>{% endif %}
+        </div>
+      {% endfor %}
+
+      <button class="shop-button" type="submit">Confirmar pedido simulado</button>
+      <a class="checkout-back-link" href="{% url 'carrito' %}">Volver al carrito</a>
+    </form>
+
+    <aside class="checkout-summary">
+      <h2>Resumen de compra</h2>
+      <ul>
+        {% for item in cart_items %}
+          <li>
+            <span>{{ item.quantity }} × {{ item.producto.name }}</span>
+            <strong>${{ item.subtotal }}</strong>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="checkout-total">Total <strong>${{ cart_total }}</strong></p>
+      <p class="checkout-note">El pedido quedará pendiente para que la tienda lo gestione.</p>
+    </aside>
+  </div>
+</section>
+{% endblock %}
