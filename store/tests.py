@@ -1,5 +1,7 @@
+import json
 import re
 from datetime import timedelta
+from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -187,6 +189,98 @@ class ProductCatalogTests(TestCase):
         session = self.client.session
         session["otp_verified"] = True
         session.save()
+
+    def graphql(self, query, variables=None):
+        response = self.client.post(
+            reverse("graphql"),
+            data=json.dumps({"query": query, "variables": variables or {}}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_graphql_catalog_hides_unpublished_products(self):
+        Product.objects.create(
+            name="Oculto", description="No publicar", category=self.category,
+            price="10.00", active=False,
+        )
+        response = self.graphql(
+            "{ products(search: \"disco\") { name category { name } } }"
+        )
+
+        self.assertNotIn("errors", response)
+        self.assertEqual(
+            response["data"]["products"],
+            [{"name": "Disco", "category": {"name": "Discos"}}],
+        )
+
+    def test_graphql_cart_mutations_validate_stock(self):
+        response = self.graphql(
+            "mutation { addToCart(productId: %d, quantity: 2) "
+            "{ cart { total itemCount items { quantity } } } }" % self.product.pk
+        )
+        self.assertNotIn("errors", response)
+        self.assertEqual(
+            self.client.session["cart"], {str(self.product.pk): 2}
+        )
+
+        response = self.graphql(
+            "mutation { addToCart(productId: %d, quantity: 2) "
+            "{ cart { total } } }" % self.product.pk
+        )
+        self.assertIn("errors", response)
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 2})
+
+        response = self.graphql(
+            "mutation { updateCart(productId: %d, quantity: 3) "
+            "{ cart { itemCount } } }" % self.product.pk
+        )
+        self.assertNotIn("errors", response)
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 3})
+
+        response = self.graphql(
+            "mutation { removeFromCart(productId: %d) "
+            "{ cart { itemCount } } }" % self.product.pk
+        )
+        self.assertNotIn("errors", response)
+        self.assertEqual(self.client.session["cart"], {})
+
+    def test_graphql_checkout_creates_order_and_decrements_stock(self):
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 2}
+        session.save()
+
+        response = self.graphql(
+            "mutation { createOrder(fullName: \"Cliente\", "
+            "email: \"cliente@example.com\", phone: \"123\", address: \"Retiro\", "
+            "paymentMethod: \"efectivo\") { order { id total status } } }"
+        )
+
+        self.assertNotIn("errors", response)
+        order = Order.objects.get()
+        self.assertEqual(order.total, Decimal("2500.00"))
+        self.assertEqual(order.items.get().quantity, 2)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 1)
+        self.assertEqual(self.client.session["cart"], {})
+
+    def test_graphql_checkout_rejects_insufficient_stock_without_partial_order(self):
+        session = self.client.session
+        session["cart"] = {str(self.product.pk): 4}
+        session.save()
+
+        response = self.graphql(
+            "mutation { createOrder(fullName: \"Cliente\", "
+            "email: \"cliente@example.com\", phone: \"123\", address: \"Retiro\", "
+            "paymentMethod: \"efectivo\") { order { id } } }"
+        )
+
+        self.assertIn("errors", response)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(OrderItem.objects.count(), 0)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 3)
+        self.assertEqual(self.client.session["cart"], {str(self.product.pk): 4})
 
     def test_public_catalog_and_home_show_published_products_only(self):
         inactive = Product.objects.create(
