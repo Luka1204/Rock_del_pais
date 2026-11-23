@@ -46,7 +46,16 @@
               <span>{% if producto.stock %}{{ producto.stock }} disponibles{% else %}Sin stock{% endif %}</span>
             </div>
             {% if not producto.active or not producto.category.active %}<span class="catalog-status">No visible en la tienda pública</span>{% endif %}
-            <a class="shop-button shop-button-outline" href="{% url 'producto_detalle' producto.pk %}">Ver producto</a>
+            <div class="catalog-actions">
+              <a class="shop-button shop-button-outline" href="{% url 'producto_detalle' producto.pk %}">Ver producto</a>
+              {% if producto.stock > 0 %}
+                <form method="post" action="{% url 'agregar_al_carrito' producto.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button class="shop-button" type="submit">Agregar al carrito</button>
+                </form>
+              {% endif %}
+            </div>
           </div>
         </article>
       {% endfor %}

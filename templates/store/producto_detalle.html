@@ -16,6 +16,15 @@
       <p class="detail-price">${{ producto.price }}</p>
       <p>{% if producto.stock %}{{ producto.stock }} disponibles{% else %}Sin stock{% endif %}</p>
       <p>{{ producto.description|default:"Sin descripción"|linebreaksbr }}</p>
+      {% if producto.stock > 0 %}
+        <form class="detail-cart-form" method="post" action="{% url 'agregar_al_carrito' producto.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <label for="cart-quantity">Cantidad</label>
+          <input id="cart-quantity" name="quantity" type="number" min="1" max="{{ producto.stock }}" value="1">
+          <button class="shop-button" type="submit">Agregar al carrito</button>
+        </form>
+      {% endif %}
       {% if producto.image_credit %}<p class="image-credit">Imagen: {% if producto.image_source_url %}<a href="{{ producto.image_source_url }}">{{ producto.image_credit }}</a>{% else %}{{ producto.image_credit }}{% endif %}</p>{% endif %}
       {% if user.is_staff or user.is_superuser %}
         {% if not producto.active or not producto.category.active %}<p class="catalog-status">No visible en la tienda pública</p>{% endif %}
