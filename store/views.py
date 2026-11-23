@@ -371,3 +371,29 @@ def producto_eliminar(request, pk):
         messages.success(request, "Producto eliminado correctamente.")
         return redirect("producto_lista")
     return render(request, "store/producto_confirmar_eliminar.html", {"producto": producto})
+
+def contact_view(request):
+    submitted = False
+    if request.method == "POST":
+        form = ConsultationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "¡Recibimos tu consulta! Te vamos a responder a la brevedad.",
+            )
+            request.session["contact_submitted"] = True
+            return redirect("contact")
+    else:
+        form = ConsultationForm()
+        submitted = request.session.pop("contact_submitted", False)
+
+    return render(
+        request,
+        "store/contact.html",
+        {
+            "form": form,
+            "title": "Contacto",
+            "submitted": submitted,
+        },
+    )
