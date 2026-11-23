@@ -72,9 +72,9 @@ Backlog inicial basado en el estado actual del proyecto. Las tareas están agrup
   Agregar rutas y vistas para filtrar productos por categoría y consultar un producto publicado.  
   **Aceptación:** URLs y estados inexistentes se manejan correctamente; consultas usan datos reales.
 
-- [ ] **BE-07 — Implementar carrito persistente por sesión**  
-  Validar producto, cantidad y stock al agregar, actualizar o quitar artículos.  
-  **Aceptación:** el subtotal se recalcula en el servidor y no se aceptan cantidades inválidas.
+- [X] **BE-07 — Persistir el carrito de usuarios entre sesiones**
+  Validar producto, cantidad y stock al agregar, actualizar o quitar artículos; guardar el carrito por usuario y restaurarlo luego de verificar el inicio de sesión.
+  **Aceptación:** el carrito de la sesión se vacía al cerrar sesión, vuelve al ingresar la misma cuenta y se elimina al confirmar el pedido.
 
 - [ ] **BE-08 — Implementar creación y seguimiento de pedidos**  
   Validar checkout, registrar pedido e ítems con precios de compra y reservar/actualizar stock de manera transaccional.  

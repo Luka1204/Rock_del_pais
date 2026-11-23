@@ -33,6 +33,7 @@ from .forms import (
     ProductFilterForm,
     RegistrationForm,
 )
+from .cart import restore_cart_for_user, save_cart_for_user
 from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
 from .otp import MAX_ATTEMPTS, code_digest, issue_code, valid_email
 
@@ -95,6 +96,7 @@ def _cart_snapshot(request, lock_products=False, public_only=False):
         request.session["cart"] = valid_cart
         request.session.modified = True
 
+    save_cart_for_user(request.user, valid_cart)
     return items, total, cart_changed
 
 
@@ -147,6 +149,7 @@ def checkout(request):
                 )
                 producto.stock -= quantity
                 producto.save(update_fields=("stock", "updated_at"))
+            save_cart_for_user(request.user, {})
 
         # Payment is simulated; the order stays pending for store management.
         request.session["cart"] = {}
@@ -217,6 +220,7 @@ def agregar_al_carrito(request, pk):
     cart[product_id] = new_quantity
     request.session["cart"] = cart
     request.session.modified = True
+    save_cart_for_user(request.user, cart)
 
     messages.success(request, f"Agregamos {producto.name} al carrito.")
     next_url = _safe_next(request, request.POST.get("next"))
@@ -242,6 +246,7 @@ def quitar_del_carrito(request, pk):
             messages.success(request, "Quitamos el producto del carrito.")
         request.session["cart"] = cart
         request.session.modified = True
+        save_cart_for_user(request.user, cart)
     return redirect("carrito")
 
 
@@ -252,6 +257,7 @@ def eliminar_del_carrito(request, pk):
         cart.pop(str(pk), None)
         request.session["cart"] = cart
         request.session.modified = True
+        save_cart_for_user(request.user, cart)
 
     producto = Product.objects.filter(pk=pk).first()
     if producto:
@@ -621,6 +627,7 @@ def verify_email_code(request):
         if result == "verified":
             next_url = _safe_next(request, pending.get("next", ""))
             login(request, user, backend=pending["backend"])
+            restore_cart_for_user(user, request.session)
             request.session.pop("pending_otp", None)
             request.session["otp_verified"] = True
             messages.success(request, "Tu identidad fue verificada. ¡Bienvenido!")
@@ -649,6 +656,7 @@ def resend_email_code(request):
 
 
 def logout_view(request):
+    save_cart_for_user(request.user, request.session.get("cart", {}))
     logout(request)
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect("home")
