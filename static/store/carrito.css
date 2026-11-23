@@ -147,6 +147,11 @@
   font-family: var(--font-heading);
 }
 
+.cart-summary .shop-button {
+  display: flex;
+  margin-top: .75rem;
+}
+
 .cart-summary p {
   display: flex;
   justify-content: space-between;
