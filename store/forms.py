@@ -35,6 +35,10 @@ class ManagedUserCreationForm(UserCreationForm):
     email = forms.EmailField(label="Correo electrónico", required=False)
     first_name = forms.CharField(label="Nombre", max_length=150, required=False)
     last_name = forms.CharField(label="Apellido", max_length=150, required=False)
+    role = forms.ChoiceField(
+        label="Rol",
+        choices=(("cliente", "Cliente"), ("administrador", "Administrador")),
+    )
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -44,6 +48,10 @@ class ManagedUserCreationForm(UserCreationForm):
 
 class ManagedUserChangeForm(UserChangeForm):
     password = None
+    role = forms.ChoiceField(
+        label="Rol",
+        choices=(("cliente", "Cliente"), ("administrador", "Administrador")),
+    )
 
     class Meta:
         model = User
@@ -55,6 +63,13 @@ class ManagedUserChangeForm(UserChangeForm):
             "email": "Correo electrónico",
             "is_active": "Cuenta activa",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["role"].initial = (
+                "administrador" if self.instance.is_staff or self.instance.is_superuser else "cliente"
+            )
 
 
 class ConsultationForm(forms.ModelForm):

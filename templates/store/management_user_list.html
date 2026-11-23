@@ -2,14 +2,18 @@
 {% block title %}Usuarios | Gestión{% endblock %}
 {% block management_content %}
 <section class="manage-section">
-  <div class="manage-head"><h2>Usuarios</h2></div>
+  <div class="manage-head"><h2>Usuarios</h2><a class="shop-button" href="{% url 'management_user_create' %}">Nuevo usuario</a></div>
   {% if users %}
     <div class="manage-table-wrap"><table class="manage-table">
-      <thead><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Estado</th><th>Rol</th></tr></thead>
+      <thead><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Estado</th><th>Rol</th><th>Acciones</th></tr></thead>
       <tbody>{% for account in users %}<tr>
         <td>{{ account.username }}</td><td>{{ account.get_full_name|default:"—" }}</td><td>{{ account.email|default:"—" }}</td>
         <td>{% if account.is_active %}Activo{% else %}Inactivo{% endif %}</td>
         <td>{% if account.is_staff or account.is_superuser %}Administrador{% else %}Cliente{% endif %}</td>
+        <td class="actions">
+          <a href="{% url 'management_user_edit' account.pk %}">Editar</a>
+          {% if account.pk != user.pk %}<a href="{% url 'management_user_delete' account.pk %}">Eliminar</a>{% endif %}
+        </td>
       </tr>{% endfor %}</tbody>
     </table></div>
   {% else %}<p>No hay usuarios registrados.</p>{% endif %}

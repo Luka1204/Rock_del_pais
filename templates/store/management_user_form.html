@@ -1,0 +1,26 @@
+{% extends "store/management_base.html" %}
+{% block title %}{{ title }} | Gestión{% endblock %}
+{% block management_content %}
+<section class="edit-card">
+  <span class="shop-kicker">USUARIOS</span>
+  <h2>{{ title }}</h2>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="shop-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="edit-grid">
+      {% for field in form %}
+        <div class="shop-field">
+          {% if field.name == "is_active" %}<div class="shop-checkbox">{{ field }} {{ field.label_tag }}</div>
+          {% else %}{{ field.label_tag }} {{ field }}{% endif %}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+          {% if field.errors %}<div class="shop-error" id="{{ field.auto_id }}_error">{{ field.errors }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="edit-actions">
+      <button class="shop-button" type="submit">Guardar usuario</button>
+      <a class="shop-button shop-button-outline" href="{% url 'management_user_list' %}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

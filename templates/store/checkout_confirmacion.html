@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pedido confirmado | Rock del País{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'store/tienda.css' %}">
+<link rel="stylesheet" href="{% static 'store/checkout.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="shop wrap checkout-page">
+  <div class="checkout-success">
+    <span class="shop-kicker">PEDIDO REGISTRADO</span>
+    <h1>¡Gracias por tu compra!</h1>
+    <p>Tu pedido <strong>#{{ order.pk }}</strong> quedó registrado con estado <strong>{{ order.get_status_display }}</strong>.</p>
+    <p>Esta compra es una simulación: no se realizó ningún cobro.</p>
+
+    <div class="checkout-summary">
+      <h2>Detalle del pedido</h2>
+      <ul>
+        {% for item in order.items.all %}
+          <li>
+            <span>{{ item.quantity }} × {{ item.product_name }}</span>
+            <strong>${{ item.unit_price }}</strong>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="checkout-total">Total <strong>${{ order.total }}</strong></p>
+      <p>Medio de pago seleccionado: {{ order.get_payment_method_display }}</p>
+    </div>
+
+    <a class="shop-button" href="{% url 'producto_lista' %}">Volver a la tienda</a>
+  </div>
+</section>
+{% endblock %}

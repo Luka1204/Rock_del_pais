@@ -87,7 +87,9 @@ class Order(models.Model):
     class Status(models.TextChoices):
         PENDING = "pendiente", "Pendiente"
         CONFIRMED = "confirmado", "Confirmado"
-        COMPLETED = "completado", "Completado"
+        DISPATCH = "en_despacho", "En despacho"
+        IN_TRANSIT = "en_camino", "En camino"
+        COMPLETED = "completado", "Finalizado"
         CANCELLED = "cancelado", "Cancelado"
 
     user = models.ForeignKey(

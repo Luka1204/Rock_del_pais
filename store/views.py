@@ -53,42 +53,141 @@ def home(request):
     return render(request, "store/home.html", {"productos_destacados": products})
 
 
-def carrito(request):
-    cart = request.session.get("cart", {})
-    if not isinstance(cart, dict):
-        cart = {}
+def _cart_snapshot(request, lock_products=False, public_only=False):
+    stored_cart = request.session.get("cart", {})
+    cart_is_dict = isinstance(stored_cart, dict)
+    raw_cart = stored_cart if cart_is_dict else {}
+
+    # Normalize session values; prices and stock always come from the database.
+    requested = {}
+    for product_id, quantity in raw_cart.items():
+        try:
+            product_id = int(product_id)
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            continue
+        if product_id > 0 and quantity > 0:
+            requested[product_id] = requested.get(product_id, 0) + quantity
+
+    products_query = Product.objects.select_related("category").filter(pk__in=requested)
+    if public_only or not (request.user.is_staff or request.user.is_superuser):
+        products_query = products_query.filter(active=True, category__active=True)
+    if lock_products:
+        products_query = products_query.select_for_update()
+    products = {product.pk: product for product in products_query.order_by("pk")}
 
     items = []
     total = Decimal("0")
     valid_cart = {}
-    for product_id, quantity in cart.items():
-        try:
-            quantity = int(quantity)
-            product_id = int(product_id)
-        except (TypeError, ValueError):
-            continue
-        if quantity < 1:
-            continue
-
-        producto = _productos_visibles(request).filter(pk=product_id).first()
+    for product_id, quantity in requested.items():
+        producto = products.get(product_id)
         if not producto or producto.stock < 1:
             continue
 
         quantity = min(quantity, producto.stock)
+        valid_cart[str(producto.pk)] = quantity
         subtotal = producto.price * quantity
         total += subtotal
-        valid_cart[str(producto.pk)] = quantity
         items.append({"producto": producto, "quantity": quantity, "subtotal": subtotal})
 
-    if valid_cart != cart:
+    cart_changed = not cart_is_dict or valid_cart != raw_cart
+    if cart_changed:
         request.session["cart"] = valid_cart
         request.session.modified = True
 
+    return items, total, cart_changed
+
+
+def carrito(request):
+    items, total, _ = _cart_snapshot(request)
     return render(
         request,
         "store/carrito.html",
         {"cart_items": items, "cart_total": total},
     )
+
+
+def checkout(request):
+    form = CheckoutForm(request.POST if request.method == "POST" else None)
+
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            # Lock products and re-check the session cart to prevent overselling.
+            cart_items, cart_total, cart_changed = _cart_snapshot(
+                request, lock_products=True, public_only=True
+            )
+            if cart_changed:
+                messages.warning(
+                    request,
+                    "El stock o la disponibilidad cambió. Revisá el carrito antes de confirmar.",
+                )
+                return redirect("carrito")
+            if not cart_items:
+                messages.error(request, "No hay productos disponibles para completar la compra.")
+                return redirect("carrito")
+
+            order = form.save(commit=False)
+            order.user = request.user if request.user.is_authenticated else None
+            order.total = cart_total
+            order.status = Order.Status.PENDING
+            order.stock_reserved = True
+            order.save()
+
+            for item in cart_items:
+                producto = item["producto"]
+                quantity = item["quantity"]
+
+                # Save a name/price snapshot so future catalog edits don't alter the order.
+                OrderItem.objects.create(
+                    order=order,
+                    product=producto,
+                    product_name=producto.name,
+                    unit_price=producto.price,
+                    quantity=quantity,
+                )
+                producto.stock -= quantity
+                producto.save(update_fields=("stock", "updated_at"))
+
+        # Payment is simulated; the order stays pending for store management.
+        request.session["cart"] = {}
+        request.session["last_checkout_order_id"] = order.pk
+        request.session.modified = True
+        messages.success(
+            request,
+            f"Pedido #{order.pk} creado. No se realizó ningún cobro real.",
+        )
+        return redirect("checkout_confirmacion")
+
+    cart_items, cart_total, cart_changed = _cart_snapshot(
+        request, public_only=True
+    )
+    if cart_changed:
+        messages.warning(
+            request,
+            "El stock o la disponibilidad cambió. Revisá el carrito antes de continuar.",
+        )
+        return redirect("carrito")
+    if not cart_items:
+        messages.error(request, "Agregá productos disponibles antes de continuar al checkout.")
+        return redirect("carrito")
+
+    return render(
+        request,
+        "store/checkout.html",
+        {"form": form, "cart_items": cart_items, "cart_total": cart_total},
+    )
+
+
+def checkout_confirmacion(request):
+    order_id = request.session.get("last_checkout_order_id")
+    if not order_id:
+        return redirect("carrito")
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        pk=order_id,
+    )
+    return render(request, "store/checkout_confirmacion.html", {"order": order})
 
 
 @require_POST
@@ -182,10 +281,156 @@ def management_order_list(request):
 
 
 @admin_requerido
+def management_order_edit(request, pk):
+    order_query = Order.objects.prefetch_related("items")
+    if request.method == "POST":
+        with transaction.atomic():
+            order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+            previous_status = order.status
+            form = ManagedOrderForm(request.POST, instance=order)
+            if form.is_valid():
+                new_status = form.cleaned_data["status"]
+                items = list(order.items.select_related("product").order_by("pk"))
+                quantities = {}
+                for item in items:
+                    if item.product_id:
+                        quantities[item.product_id] = quantities.get(item.product_id, 0) + item.quantity
+
+                products = {
+                    product.pk: product
+                    for product in Product.objects.select_for_update()
+                    .filter(pk__in=quantities)
+                    .order_by("pk")
+                }
+
+                if (
+                    previous_status != Order.Status.CANCELLED
+                    and new_status == Order.Status.CANCELLED
+                    and order.stock_reserved
+                ):
+                    for product_id, quantity in quantities.items():
+                        product = products.get(product_id)
+                        if product:
+                            product.stock += quantity
+                            product.save(update_fields=("stock", "updated_at"))
+                    order.stock_reserved = False
+                elif (
+                    previous_status == Order.Status.CANCELLED
+                    and new_status != Order.Status.CANCELLED
+                    and not order.stock_reserved
+                ):
+                    if any(not item.product_id for item in items):
+                        form.add_error("status", "No se puede reactivar el pedido: hay productos que ya no existen.")
+                    else:
+                        unavailable = next(
+                            (
+                                product
+                                for product_id, product in products.items()
+                                if product.stock < quantities[product_id]
+                            ),
+                            None,
+                        )
+                        if unavailable:
+                            form.add_error(
+                                "status",
+                                f"No hay stock suficiente de {unavailable.name} para reactivar el pedido.",
+                            )
+                        else:
+                            for product_id, quantity in quantities.items():
+                                product = products[product_id]
+                                product.stock -= quantity
+                                product.save(update_fields=("stock", "updated_at"))
+                            order.stock_reserved = True
+
+                if form.errors:
+                    return render(
+                        request,
+                        "store/management_order_form.html",
+                        {"form": form, "order": order, "title": f"Editar pedido #{order.pk}"},
+                    )
+                form.save()
+                order.save(update_fields=("stock_reserved",))
+                messages.success(request, f"Actualizamos el pedido #{order.pk}.")
+                return redirect("management_order_list")
+    else:
+        order = get_object_or_404(order_query, pk=pk)
+        form = ManagedOrderForm(instance=order)
+    return render(
+        request,
+        "store/management_order_form.html",
+        {"form": form, "order": order, "title": f"Editar pedido #{order.pk}"},
+    )
+
+
+@admin_requerido
 def management_user_list(request):
+    User = get_user_model()
     return render(request, "store/management_user_list.html", {
-        "users": get_user_model().objects.order_by("username"),
+        "users": User.objects.filter(is_superuser=False).order_by("username"),
     })
+
+
+@admin_requerido
+def management_user_create(request):
+    form = ManagedUserCreationForm(
+        request.POST if request.method == "POST" else None
+    )
+    if request.method == "POST" and form.is_valid():
+        account = form.save(commit=False)
+        account.is_staff = form.cleaned_data["role"] == "administrador"
+        account.save()
+        form.save_m2m()
+        messages.success(request, f"Creamos el usuario {account.username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_form.html",
+        {"form": form, "title": "Nuevo usuario"},
+    )
+
+
+@admin_requerido
+def management_user_edit(request, pk):
+    User = get_user_model()
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    form = ManagedUserChangeForm(
+        request.POST if request.method == "POST" else None,
+        instance=account,
+    )
+    if account.pk == request.user.pk:
+        form.fields["role"].disabled = True
+        form.fields["is_active"].disabled = True
+    if request.method == "POST" and form.is_valid():
+        account = form.save(commit=False)
+        account.is_staff = form.cleaned_data["role"] == "administrador"
+        account.save()
+        form.save_m2m()
+        messages.success(request, f"Actualizamos el usuario {account.username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_form.html",
+        {"form": form, "title": f"Editar usuario {account.username}", "account": account},
+    )
+
+
+@admin_requerido
+def management_user_delete(request, pk):
+    User = get_user_model()
+    account = get_object_or_404(User, pk=pk, is_superuser=False)
+    if account.pk == request.user.pk:
+        messages.error(request, "No podés eliminar tu propio usuario.")
+        return redirect("management_user_list")
+    if request.method == "POST":
+        username = account.username
+        account.delete()
+        messages.success(request, f"Eliminamos el usuario {username}.")
+        return redirect("management_user_list")
+    return render(
+        request,
+        "store/management_user_confirm_delete.html",
+        {"account": account},
+    )
 
 
 @admin_requerido

@@ -59,6 +59,7 @@
         <h2>Resumen</h2>
         <p>Total: <strong>${{ cart_total }}</strong></p>
         <a class="shop-button" href="{% url 'producto_lista' %}">Seguir comprando</a>
+        <a class="shop-button cart-checkout-button" href="{% url 'checkout' %}">Continuar al checkout</a>
       </aside>
     </div>
   {% else %}
