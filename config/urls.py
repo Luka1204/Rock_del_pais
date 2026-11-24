@@ -67,5 +67,3 @@ urlpatterns = [
     path("productos/<int:pk>/eliminar/", views.producto_eliminar, name="producto_eliminar"),
     path("contact/", views.contact_view, name="contact"),
 
-]
-

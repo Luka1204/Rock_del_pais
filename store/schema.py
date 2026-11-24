@@ -5,6 +5,7 @@ from django.db import transaction
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
 
+from .cart import normalize_cart, save_cart_for_user
 from .forms import CheckoutForm
 from .models import Category, Order, OrderItem, Product
 
@@ -41,22 +42,12 @@ class OrderReceiptType(graphene.ObjectType):
 
 def _session_cart(request):
     raw_cart = request.session.get("cart", {})
-    if not isinstance(raw_cart, dict):
-        raw_cart = {}
-
-    cart = {}
-    for product_id, quantity in raw_cart.items():
-        try:
-            product_id = int(product_id)
-            quantity = int(quantity)
-        except (TypeError, ValueError):
-            continue
-        if product_id > 0 and 1 <= quantity <= 99:
-            cart[str(product_id)] = quantity
+    cart = normalize_cart(raw_cart)
 
     if cart != raw_cart:
         request.session["cart"] = cart
         request.session.modified = True
+        save_cart_for_user(request.user, cart)
     return cart
 
 
@@ -95,6 +86,7 @@ def _cart_data(request):
         request.session["cart"] = valid_cart
         request.session.modified = True
 
+    save_cart_for_user(request.user, valid_cart)
     return {"items": items, "total": total, "item_count": item_count}
 
 
@@ -165,6 +157,7 @@ class AddToCart(graphene.Mutation):
         cart[key] = new_quantity
         info.context.session["cart"] = cart
         info.context.session.modified = True
+        save_cart_for_user(info.context.user, cart)
         return AddToCart(
             cart=_cart_data(info.context),
             message="Producto agregado al carrito.",
@@ -200,6 +193,7 @@ class UpdateCart(graphene.Mutation):
         cart[key] = quantity
         info.context.session["cart"] = cart
         info.context.session.modified = True
+        save_cart_for_user(info.context.user, cart)
         return UpdateCart(cart=_cart_data(info.context), message="Carrito actualizado.")
 
 
@@ -216,6 +210,7 @@ class RemoveFromCart(graphene.Mutation):
         cart.pop(str(product_id), None)
         info.context.session["cart"] = cart
         info.context.session.modified = True
+        save_cart_for_user(info.context.user, cart)
         return RemoveFromCart(cart=_cart_data(info.context), message="Producto quitado.")
 
 
@@ -318,6 +313,7 @@ class CreateOrder(graphene.Mutation):
                 product = products[product_id]
                 product.stock -= quantity
                 product.save(update_fields=["stock"])
+            save_cart_for_user(info.context.user, {})
 
         info.context.session["cart"] = {}
         info.context.session.modified = True

@@ -15,7 +15,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
-from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
+from .models import (
+    Category,
+    Consultation,
+    EmailOTPChallenge,
+    Order,
+    OrderItem,
+    Product,
+    SavedCart,
+)
 from .otp import MAX_ATTEMPTS
 
 
@@ -251,6 +259,55 @@ class EmailOTPTests(TestCase):
         self.client.force_login(self.user)
         self.client.get(reverse("home"))
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_cart_is_restored_for_same_user_after_logout_and_cleared_at_checkout(self):
+        category = Category.objects.create(name="Discos")
+        product = Product.objects.create(
+            name="Disco", category=category, price="100.00", stock=3
+        )
+        self.client.force_login(self.user)
+        session = self.client.session
+        session["otp_verified"] = True
+        session.save()
+        self.client.post(
+            reverse("agregar_al_carrito", args=[product.pk]),
+            {"quantity": 3},
+        )
+        self.assertEqual(
+            SavedCart.objects.get(user=self.user).items,
+            {str(product.pk): 3},
+        )
+
+        self.client.post(reverse("logout"))
+        self.assertEqual(self.client.session.get("cart", {}), {})
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+        self.start_login()
+        response = self.client.post(
+            reverse("verify_email_code"),
+            {"code": self.sent_code()},
+        )
+        self.assertRedirects(response, reverse("home"))
+        self.assertEqual(self.client.session["cart"], {str(product.pk): 3})
+
+        response = self.client.post(
+            reverse("checkout"),
+            {
+                "full_name": "Cliente",
+                "email": self.user.email,
+                "phone": "123",
+                "address": "Retiro",
+                "delivery_notes": "",
+                "payment_method": Order.PaymentMethod.CASH,
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("checkout_confirmacion"),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(self.client.session.get("cart", {}), {})
+        self.assertFalse(SavedCart.objects.filter(user=self.user).exists())
 
     def test_changing_password_or_email_invalidates_pending_code(self):
         self.start_login()
@@ -538,7 +595,7 @@ class ProductCatalogTests(TestCase):
         self.assertRedirects(
             response, reverse("checkout_confirmacion"), fetch_redirect_response=False
         )
-        self.assertEqual(order.total, self.product.price * 2)
+        self.assertEqual(order.total, Decimal(self.product.price) * 2)
         self.assertEqual(order.status, Order.Status.PENDING)
         self.assertEqual(item.product, self.product)
         self.assertEqual(item.quantity, 2)
