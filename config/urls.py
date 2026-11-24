@@ -63,11 +63,6 @@ urlpatterns = [
     path("productos/<int:pk>/", views.producto_detalle, name="producto_detalle"),
     path("productos/<int:pk>/editar/", views.producto_editar, name="producto_editar"),
     path("productos/<int:pk>/eliminar/", views.producto_eliminar, name="producto_eliminar"),
-<<<<<<< HEAD
     path("contact/", views.contact_view, name="contact"),
-=======
-
-
->>>>>>> 0b6613bbf45ca996724f1b53e7c48b70f1286039
 ]
 

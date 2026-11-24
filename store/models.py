@@ -79,6 +79,16 @@ class Product(models.Model):
         return self.name
 
 
+class SavedCart(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_cart",
+    )
+    items = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class Order(models.Model):
     class PaymentMethod(models.TextChoices):
         TRANSFER = "transferencia", "Transferencia bancaria"
