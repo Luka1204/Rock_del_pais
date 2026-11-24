@@ -1,9 +1,11 @@
 from django.shortcuts import render
 import csv
 import secrets
+from datetime import timedelta
 from decimal import Decimal
 from functools import wraps
 
+import jwt
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
@@ -15,9 +17,10 @@ from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.crypto import constant_time_compare
+from django.utils.crypto import constant_time_compare, salted_hmac
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import (
     CartAddForm,
@@ -51,6 +54,42 @@ def admin_requerido(view_func):
 def home(request):
     products = Product.objects.filter(active=True, category__active=True).order_by("-created_at")[:3]
     return render(request, "store/home.html", {"productos_destacados": products})
+
+
+def productos_api(request):
+    return render(request, "store/productos_api.html")
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def cuenta_sesion(request):
+    token = None
+    if request.method == "POST":
+        now = timezone.now()
+        key = salted_hmac("store.demo_jwt", settings.SECRET_KEY, algorithm="sha256").hexdigest()
+        token = jwt.encode(
+            {
+                "sub": str(request.user.pk),
+                "iat": now,
+                "exp": now + timedelta(minutes=5),
+                "purpose": "demostracion",
+            },
+            key,
+            algorithm="HS256",
+        )
+    return render(
+        request,
+        "store/cuenta_sesion.html",
+        {
+            "token": token,
+            "session_cookie_name": settings.SESSION_COOKIE_NAME,
+            "session_cookie_present": settings.SESSION_COOKIE_NAME in request.COOKIES,
+            "session_cookie_httponly": settings.SESSION_COOKIE_HTTPONLY,
+            "session_cookie_secure": settings.SESSION_COOKIE_SECURE,
+            "session_cookie_samesite": settings.SESSION_COOKIE_SAMESITE,
+        },
+    )
 
 
 def _cart_snapshot(request, lock_products=False, public_only=False):

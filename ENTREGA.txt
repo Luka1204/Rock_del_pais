@@ -1,0 +1,44 @@
+TRABAJO PRÁCTICO FINAL - ROCK DEL PAÍS
+
+Número de grupo: [COMPLETAR]
+Integrantes (nombre completo y DNI): [COMPLETAR POR EL EQUIPO]
+
+Descripción:
+Rock del País es una tienda de vinilos de rock argentino, instrumentos y
+equipamiento. Permite consultar productos, utilizar un carrito, registrar
+pedidos y enviar consultas. El personal puede administrar el catálogo, los
+pedidos y los usuarios.
+
+Demostración de los requisitos:
+1. Registro: enlace "Crear cuenta".
+2. CRUD de usuarios: Gestión > Usuarios, disponible para el personal autorizado.
+3. API: enlace "Productos API"; consulta la API GraphQL propia y muestra productos.
+4. Ingreso: enlace "Ingresar", con verificación por correo.
+5. Consultas de usuarios: enlace "Contacto".
+6. Empresa: sección "La historia" de la página principal.
+7. JWT: ingresar a la cuenta, seleccionar el saludo y generar un JWT de demostración.
+   El JWT vence en cinco minutos y no autoriza el ingreso ni las operaciones de API.
+8. Cookie de sesión: en la misma pantalla se muestran su nombre y atributos.
+   El valor puede inspeccionarse en Aplicación/Almacenamiento > Cookies del navegador;
+   no se debe compartir porque permite acceder a la sesión.
+
+Preparación:
+1. Instalar Python y MySQL; crear una base vacía y configurar las variables
+   de la base y Django según .env.example.
+2. Crear un entorno virtual e instalar los paquetes de requirements.txt.
+3. Configurar el correo SMTP mediante las variables SMTP_EMAIL_USER,
+   SMTP_APP_PASSWORD y SMTP_DEFAULT_FROM_EMAIL en el entorno del proceso.
+   La verificación por correo es obligatoria para iniciar sesión.
+4. Ejecutar python manage.py migrate.
+5. Opcional: ejecutar python manage.py sembrar_productos para cargar productos
+   de ejemplo; los precios y el stock son ilustrativos.
+6. Ejecutar python manage.py runserver y abrir http://127.0.0.1:8000/.
+
+Antes de entregar:
+- Completar los datos del grupo localmente.
+- Revisar los archivos y retirar claves, contraseñas y datos personales que no
+  sean requeridos. No incluir bases de datos reales ni sesiones del navegador.
+- El enunciado solicita un entorno virtual en el ZIP: verificar con el docente
+  cómo entregarlo, ya que puede contener rutas y configuraciones de la máquina.
+- AGENTE.txt contiene una propuesta genérica de agente, skills y resolución de
+  errores. Revisar si coincide con el formato explicado en clase.

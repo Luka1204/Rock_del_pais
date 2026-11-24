@@ -29,6 +29,8 @@ urlpatterns = [
         name="graphql",
     ),
     path("", views.home, name="home"),
+    path("productos-api/", views.productos_api, name="productos_api"),
+    path("cuenta/sesion/", views.cuenta_sesion, name="cuenta_sesion"),
     path("carrito.html", views.carrito, name="carrito"),
     path("carrito/", views.carrito, name="carrito_alias"),
     path("checkout/", views.checkout, name="checkout"),
@@ -63,11 +65,7 @@ urlpatterns = [
     path("productos/<int:pk>/", views.producto_detalle, name="producto_detalle"),
     path("productos/<int:pk>/editar/", views.producto_editar, name="producto_editar"),
     path("productos/<int:pk>/eliminar/", views.producto_eliminar, name="producto_eliminar"),
-<<<<<<< HEAD
     path("contact/", views.contact_view, name="contact"),
-=======
 
-
->>>>>>> 0b6613bbf45ca996724f1b53e7c48b70f1286039
 ]
 

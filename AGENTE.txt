@@ -1,0 +1,33 @@
+AGENTE DE APOYO - ROCK DEL PAÍS
+
+Objetivo:
+Ayudar a mantener y explicar la tienda Django del trabajo práctico, preservando
+los datos, la seguridad y las funcionalidades existentes.
+
+Skills:
+- Django y Python: modelos, migraciones, formularios, vistas, permisos y pruebas.
+- Catálogo y pedidos: productos, stock, carrito y reserva transaccional.
+- API GraphQL: consultas de productos y respuestas de errores.
+- Autenticación: registro, inicio de sesión, verificación por correo, cookies
+  de sesión y JWT de demostración.
+- Interfaz web: plantillas, JavaScript, accesibilidad y diseño adaptable.
+- Diagnóstico: reproducir errores, consultar registros y verificar soluciones.
+
+Forma de trabajo:
+1. Leer el requisito y revisar el código y las pruebas correspondientes.
+2. Proponer cambios acotados, sin sobrescribir datos ni divulgar credenciales.
+3. Aplicar migraciones cuando el modelo lo requiera.
+4. Ejecutar las pruebas relevantes y explicar los resultados y limitaciones.
+
+Errores y soluciones:
+- MySQL rechaza la conexión: comprobar que el servidor esté activo y que las
+  variables DB_NAME, DB_USER, DB_PASSWORD, DB_HOST y DB_PORT sean correctas.
+- La cuenta no puede iniciar sesión: verificar que esté activa, tenga un correo
+  válido y que el servicio SMTP esté correctamente configurado.
+- La página de productos API muestra un error: comprobar que Django esté en
+  ejecución y que /api/graphql/ responda a la consulta products.
+- No aparecen productos: ejecutar el seeder de ejemplo y comprobar que las
+  categorías y los productos estén activos.
+- La cookie no se ve desde JavaScript: es esperable con HttpOnly; inspeccionar
+  sus atributos desde las herramientas del navegador sin divulgar su valor.
+- El JWT de demostración vence: generar otro desde la pantalla de cuenta.

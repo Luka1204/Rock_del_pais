@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Productos de la API | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
+{% block content %}
+<section class="shop wrap">
+  <div class="shop-heading">
+    <span class="shop-kicker">API GRAPHQL</span>
+    <h1>Productos desde la API</h1>
+    <p>Esta página consulta la API de la tienda y muestra los productos publicados.</p>
+    <a class="field-link" href="{% url 'producto_lista' %}">Ir a la tienda</a>
+  </div>
+  <p id="api-status" role="status" aria-live="polite">Cargando productos...</p>
+  <div id="api-products" class="catalog-grid" data-api-url="{% url 'graphql' %}"></div>
+  <noscript>Activá JavaScript para consultar la API y mostrar los productos.</noscript>
+</section>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'store/productos_api.js' %}" defer></script>{% endblock %}

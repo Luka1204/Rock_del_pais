@@ -1,17 +1,134 @@
 import json
 import re
+from io import StringIO
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+import jwt
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 
 from .models import Category, Consultation, EmailOTPChallenge, Order, OrderItem, Product
 from .otp import MAX_ATTEMPTS
+
+
+class ProductSeederTests(TestCase):
+    def test_seed_creates_catalog_and_is_idempotent(self):
+        output = StringIO()
+        call_command("sembrar_productos", stdout=output)
+        initial_count = Product.objects.count()
+        self.assertGreater(initial_count, 0)
+        self.assertIn(f"Productos creados: {initial_count}", output.getvalue())
+        self.assertEqual(
+            set(Product.objects.values_list("category__slug", flat=True)),
+            {"discos", "instrumentos", "amplificadores", "accesorios"},
+        )
+        self.assertTrue(Product.objects.filter(brand="Charly García", stock__gt=0).exists())
+        self.assertEqual(
+            Product.objects.filter(active=True, category__active=True).count(), initial_count
+        )
+
+        product = Product.objects.get(slug="vinilo-artaud-pescado-rabioso")
+        product.stock = 0
+        product.price = "999.00"
+        product.save()
+        category = product.category
+        category.active = False
+        category.save()
+
+        output = StringIO()
+        call_command("sembrar_productos", stdout=output)
+        self.assertIn("Productos creados: 0", output.getvalue())
+        self.assertIn("categorías están inactivas", output.getvalue())
+        self.assertEqual(Product.objects.count(), initial_count)
+        product.refresh_from_db()
+        category.refresh_from_db()
+        self.assertEqual(product.stock, 0)
+        self.assertEqual(str(product.price), "999.00")
+        self.assertFalse(category.active)
+
+    def test_seed_preserves_existing_product_with_same_slug(self):
+        category = Category.objects.create(name="Otra categoría")
+        product = Product.objects.create(
+            slug="vinilo-artaud-pescado-rabioso",
+            name="Producto existente",
+            category=category,
+            price="100.00",
+            stock=7,
+        )
+        output = StringIO()
+        call_command("sembrar_productos", stdout=output)
+        product.refresh_from_db()
+        self.assertEqual(product.name, "Producto existente")
+        self.assertEqual(product.category, category)
+        self.assertEqual(product.stock, 7)
+        self.assertIn("Ya existentes, sin modificar: 1", output.getvalue())
+
+
+@override_settings(ALLOWED_HOSTS=["testserver"])
+class AssignmentDemonstrationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="usuario", password="una-clave-segura-123"
+        )
+
+    def login_verified(self, client):
+        client.force_login(self.user)
+        session = client.session
+        session["otp_verified"] = True
+        session.save()
+
+    def test_jwt_requires_verified_login_and_contains_only_demo_claims(self):
+        url = reverse("cuenta_sesion")
+        self.assertRedirects(
+            self.client.post(url), f"{reverse('login')}?next={url}",
+            fetch_redirect_response=False,
+        )
+        self.login_verified(self.client)
+        session_key = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, session_key)
+        self.assertIn("no-store", response["Cache-Control"])
+        key = salted_hmac("store.demo_jwt", settings.SECRET_KEY, algorithm="sha256").hexdigest()
+        claims = jwt.decode(response.context["token"], key, algorithms=["HS256"])
+        self.assertEqual(claims["sub"], str(self.user.pk))
+        self.assertEqual(claims["purpose"], "demostracion")
+        self.assertEqual(claims["exp"] - claims["iat"], 300)
+        self.assertEqual(set(claims), {"sub", "iat", "exp", "purpose"})
+
+    def test_jwt_generation_requires_csrf(self):
+        client = self.client_class(enforce_csrf_checks=True)
+        self.login_verified(client)
+        url = reverse("cuenta_sesion")
+        response = client.get(url)
+        self.assertIsNone(response.context["token"])
+        self.assertEqual(client.post(url).status_code, 403)
+        csrf = response.cookies[settings.CSRF_COOKIE_NAME].value
+        self.assertEqual(client.post(url, {"csrfmiddlewaretoken": csrf}).status_code, 200)
+
+    def test_product_api_page_and_graphql_query(self):
+        category = Category.objects.create(name="Discos")
+        Product.objects.create(name="Publicado", category=category, price="100", stock=2)
+        Product.objects.create(name="Oculto", category=category, price="100", active=False)
+        response = self.client.get(reverse("productos_api"))
+        self.assertContains(response, reverse("graphql"))
+        self.assertContains(response, "productos_api.js")
+        response = self.client.get(reverse("graphql"), {
+            "query": "{ products { name price stock category { name } } }",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["data"]["products"],
+            [{"name": "Publicado", "price": "100.00", "stock": 2, "category": {"name": "Discos"}}],
+        )
 
 
 @override_settings(

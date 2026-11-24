@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Sesión y JWT | Rock del País{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'store/tienda.css' %}">{% endblock %}
+{% block content %}
+<section class="shop wrap">
+  <div class="edit-card">
+    <span class="shop-kicker">MI CUENTA</span>
+    <h1>Sesión y JWT</h1>
+    <p>Sesión iniciada como <strong>{{ user.username }}</strong>.</p>
+    <h2>Cookie de sesión</h2>
+    <p>
+      Nombre: <strong>{{ session_cookie_name }}</strong>.
+      {% if session_cookie_present %}El navegador envió la cookie de sesión.{% else %}La cookie de sesión no está presente en esta solicitud.{% endif %}
+    </p>
+    <p>
+      HttpOnly: {{ session_cookie_httponly|yesno:"sí,no" }} ·
+      Secure: {{ session_cookie_secure|yesno:"sí,no" }} ·
+      SameSite: {{ session_cookie_samesite|default:"no configurado" }}.
+    </p>
+    <p>Podés inspeccionar sus atributos en las herramientas del navegador, en Aplicación o Almacenamiento → Cookies. No compartas su valor: permite acceder a tu sesión.</p>
+    <h2>Token JWT de demostración</h2>
+    <p>Este JWT firmado pertenece a tu usuario y vence en cinco minutos. Es solo para mostrar su formato; no sirve para iniciar sesión ni para autorizar operaciones de la API.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="shop-button" type="submit">Generar JWT de demostración</button>
+    </form>
+    {% if token %}
+      <div class="shop-field">
+        <label for="demo-token">JWT de demostración</label>
+        <textarea id="demo-token" rows="5" readonly>{{ token }}</textarea>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
